@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 body { @apply bg-[#faf9f7] text-slate-800; }
+/* Root pages fill the available space in the app shell; the legal footer then
+   sits at the bottom of a short page instead of creating an extra viewport. */
+main.min-h-screen { min-height: 0; flex: 1; }
 
 @keyframes xp-float { 0% { opacity: 0; transform: translateY(8px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-20px); } }
 .xp-float { animation: xp-float 1.1s ease-out both; }

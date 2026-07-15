@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body className="flex min-h-screen flex-col">{children}<LegalFooter /></body></html>;
+  return <html lang="en"><body className="flex min-h-screen flex-col"><div className="flex flex-1 flex-col">{children}</div><LegalFooter /></body></html>;
 }
