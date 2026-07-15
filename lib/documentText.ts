@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import mammoth from "mammoth";
-import pdfParse from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 
 const MAX_FILES = 4;
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
@@ -28,7 +28,12 @@ async function extractPptx(buffer: Buffer) {
 }
 
 async function extractPdf(buffer: Buffer) {
-  return (await pdfParse(buffer)).text;
+  const parser = new PDFParse({ data: new Uint8Array(buffer) });
+  try {
+    return (await parser.getText()).text;
+  } finally {
+    await parser.destroy();
+  }
 }
 
 async function extractOne(file: File) {
