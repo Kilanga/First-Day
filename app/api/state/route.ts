@@ -49,7 +49,8 @@ export async function GET(request: Request) {
       concepts: orderedConcepts(subject.trapMap as unknown as TrapMap).map((concept) => {
         const state = subject.learnerState.find((item) => item.conceptId === concept.id);
         const notebook = state?.notebookEntry as { text?: unknown } | null;
-        return { id: concept.id, name: concept.name, status: state?.status ?? "not_covered", notebookEntry: typeof notebook?.text === "string" ? notebook.text : undefined };
+        const masteredAt = typeof (notebook as { createdAt?: unknown } | null)?.createdAt === "string" ? (notebook as { createdAt: string }).createdAt : undefined;
+        return { id: concept.id, name: concept.name, status: state?.status ?? "not_covered", notebookEntry: typeof notebook?.text === "string" ? notebook.text : undefined, masteredAt };
       }),
       activeSession: active ? {
         id: active.id,

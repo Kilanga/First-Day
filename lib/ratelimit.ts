@@ -1,7 +1,19 @@
 import { prisma } from "./prisma";
+import { createHash } from "node:crypto";
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
+
+function clientAddress(request: Request) {
+  const value = request.headers.get("x-vercel-forwarded-for") ?? request.headers.get("x-forwarded-for") ?? "unknown";
+  return value.split(",")[0]?.trim().slice(0, 100) || "unknown";
+}
+
+/** A hashed, short-lived network key for public creation endpoints. */
+export async function consumeIpQuota(request: Request, scope: "subject" | "claim", limit: number) {
+  const digest = createHash("sha256").update(clientAddress(request)).digest("hex").slice(0, 24);
+  return consumeCounter(`ip:${scope}:${digest}`, limit, HOUR_MS);
+}
 
 async function consumeCounter(key: string, limit: number, windowMs: number) {
   const now = new Date();

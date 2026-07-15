@@ -1,6 +1,12 @@
 import OpenAI from "openai";
 
 const MODEL = "gpt-5.6";
+const DEFAULT_TIMEOUT_MS = 45_000;
+
+function timeoutMs() {
+  const configured = Number(process.env.OPENAI_TIMEOUT_MS);
+  return Number.isFinite(configured) && configured >= 5_000 && configured <= 120_000 ? configured : DEFAULT_TIMEOUT_MS;
+}
 
 export class OpenAIJsonError extends Error {
   readonly code = "MALFORMED_JSON";
@@ -36,7 +42,7 @@ export async function callJson<T>(system: string, user: string, schemaHint: stri
         { role: "system", content: `${system}\n\nReturn one valid JSON object only. Schema guidance: ${schemaHint}` },
         { role: "user", content: retryMessage }
       ]
-    });
+    }, { timeout: timeoutMs() });
 
     const content = readContent(completion.choices[0]?.message.content ?? null);
     try {
@@ -58,7 +64,7 @@ export async function callText(system: string, messages: ConversationMessage[]):
   const completion = await client.chat.completions.create({
     model: MODEL,
     messages: [{ role: "system", content: system }, ...messages]
-  });
+  }, { timeout: timeoutMs() });
 
   return readContent(completion.choices[0]?.message.content ?? null);
 }

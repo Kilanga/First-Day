@@ -6,7 +6,7 @@ import { assertTrapMap, orderedConcepts, trapMapSchemaHint, trapMapSystemPrompt,
 import { prisma } from "@/lib/prisma";
 import demoTrapMap from "@/public/demo/pm-fundamentals.json";
 import { issueMentorSession, requireMentorId, resolveMentorId } from "@/lib/mentorSession";
-import { consumeAiActionQuota } from "@/lib/ratelimit";
+import { consumeAiActionQuota, consumeIpQuota } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 
@@ -55,6 +55,8 @@ export async function POST(request: Request) {
     if (!isDemo && body.files.length > 0 && (typeof body.focus !== "string" || !body.focus.trim())) return NextResponse.json({ error: "Describe what your new hire should learn from the documents." }, { status: 400 });
 
     const mentorId = mentorSession.mentorId;
+    const ipLimit = Number(process.env.IP_SUBJECT_HOURLY_CAP ?? 10);
+    if (!isDemo && !(await consumeIpQuota(request, "subject", Number.isFinite(ipLimit) && ipLimit > 0 ? ipLimit : 10))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
     if (!isDemo && !(await consumeAiActionQuota(mentorId, "subject"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
     const providedTitle = typeof body.title === "string" ? body.title.trim() : "";
     const mentor = await prisma.mentor.upsert({ where: { id: mentorId }, update: {}, create: { id: mentorId } });

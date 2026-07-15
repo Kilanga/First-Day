@@ -102,6 +102,7 @@ The model is therefore used for language, misconception design, and character ex
 6. **Production hardening:** Vercel build fixes, migration deployment, input-size limits, bounded state payloads, retry/error messaging, and build verification.
 7. **Reusable learning:** local-document focus prompts and shareable learning links with isolated recipient state.
 8. **Finishing pass:** keyboard-friendly chat controls, accessible live updates, resilient retry states, mobile-safe action bars, and clearer shared-learning handoff.
+9. **Guided continuity:** a no-API “I’m stuck” explanation scaffold, next-focus and latest-win cues on the learning desk, and an onboarding preview of the learning flow.
 
 ## Local development
 
@@ -137,13 +138,15 @@ For production, Vercel runs the `build` script, which deploys Prisma migrations,
 - Shared-learning links are bearer links: anyone with the link can open the reusable template. Do not share confidential material through them.
 - Set `MENTOR_SESSION_SECRET` in Vercel before deploying this version. Use a unique random value of at least 32 characters. Configure Neon with its pooled connection URL for production traffic.
 - The app pins Node 24 and pnpm 10 for Vercel compatibility. Database indexes cover the main dashboard, session-history, and message-history queries.
+- OpenAI calls time out after 45 seconds by default, and public subject creation has both per-mentor and hashed per-IP hourly limits. Keep Vercel Firewall enabled as a second layer in production.
 
 ### Production checklist
 
 1. Configure `OPENAI_API_KEY`, `DATABASE_URL`, `MENTOR_SESSION_SECRET`, and the three public legal variables in Vercel.
 2. Use Neon’s pooled production connection URL and keep direct migration credentials out of browser-visible variables.
-3. Confirm Vercel has no analytics or marketing tracker enabled unless its consent flow and privacy notice have been updated.
-4. After deployment, confirm `/privacy`, `/terms`, `/legal`, a protected report URL, document upload, shared-link disablement, and **Delete my data** all work as expected.
+3. Enable Vercel Firewall protections and configure deployment/error notifications in the Vercel project dashboard.
+4. Confirm Vercel has no analytics or marketing tracker enabled unless its consent flow and privacy notice have been updated.
+5. After deployment, confirm `/privacy`, `/terms`, `/legal`, a protected report URL, document upload, shared-link disablement, and **Delete my data** all work as expected.
 
 ## Manual test flow
 
