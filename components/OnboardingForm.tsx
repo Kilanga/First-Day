@@ -1,0 +1,42 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+
+function mentorId() {
+  const key = "first-day-mentor-id";
+  const existing = localStorage.getItem(key);
+  if (existing) return existing;
+  const id = crypto.randomUUID();
+  localStorage.setItem(key, id);
+  return id;
+}
+
+type CreatedSubject = { subjectId: string; firstQuestion: string; hire: { name: string; personality?: string[] } };
+
+export default function OnboardingForm() {
+  const router = useRouter();
+  const [title, setTitle] = useState("");
+  const [notes, setNotes] = useState("");
+  const [created, setCreated] = useState<CreatedSubject>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
+  async function createSubject(event: FormEvent) {
+    event.preventDefault(); setLoading(true); setError(undefined);
+    try {
+      const id = mentorId();
+      const response = await fetch("/api/subjects", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mentorId: id, title, notes: notes || undefined }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Unable to create your subject.");
+      setCreated(data);
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to create your subject."); }
+    finally { setLoading(false); }
+  }
+  function enterOffice() {
+    if (!created) return;
+    const query = new URLSearchParams({ subjectId: created.subjectId, mentorId: mentorId(), title, hireName: created.hire.name, firstQuestion: created.firstQuestion });
+    router.push(`/office?${query}`);
+  }
+  if (created) return <section className="rounded-2xl border border-indigo-100 bg-white p-8 text-center shadow-sm"><p className="text-sm font-semibold text-indigo-600">Your new hire arrives</p><div className="mx-auto mt-5 grid h-16 w-16 place-items-center rounded-2xl bg-indigo-100 text-xl font-bold text-indigo-700">{created.hire.name.slice(0, 2).toUpperCase()}</div><h2 className="mt-4 text-2xl font-semibold text-slate-900">Meet {created.hire.name}</h2><p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-slate-600">{created.hire.personality?.join(" · ")}</p><button onClick={enterOffice} className="mt-7 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white">Enter the office</button></section>;
+  return <form onSubmit={createSubject} className="rounded-2xl border border-indigo-100 bg-white p-7 shadow-sm"><label className="block text-sm font-semibold text-slate-800">What would you like to teach?<input value={title} onChange={(event) => setTitle(event.target.value)} required placeholder="e.g. Financial forecasting" className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 font-normal outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" /></label><label className="mt-5 block text-sm font-semibold text-slate-800">Paste your study notes <span className="font-normal text-slate-400">(optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={6} placeholder="Terms, examples, and the tricky parts you want to practise…" className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-4 py-3 font-normal outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" /></label><button disabled={!title.trim() || loading} className="mt-6 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{loading ? "Creating your hire…" : "Meet your new hire"}</button>{error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}</form>;
+}
