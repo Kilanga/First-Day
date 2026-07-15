@@ -1,5 +1,6 @@
 import OfficeWorkspace from "@/components/OfficeWorkspace";
 
-export default function OfficePage({ searchParams }: { searchParams?: { subjectId?: string; mentorId?: string; title?: string; hireName?: string; firstQuestion?: string } }) {
-  return <OfficeWorkspace subjectId={searchParams?.subjectId} mentorId={searchParams?.mentorId} title={searchParams?.title ?? "Your learning session"} name={searchParams?.hireName ?? "Your new hire"} initialQuestion={searchParams?.firstQuestion} />;
+export default async function OfficePage({ searchParams }: { searchParams: Promise<{ subjectId?: string; title?: string; hireName?: string; firstQuestion?: string }> }) {
+  const query = await searchParams;
+  return <OfficeWorkspace subjectId={query.subjectId} title={query.title ?? "Your learning session"} name={query.hireName ?? "Your new hire"} initialQuestion={query.firstQuestion} />;
 }

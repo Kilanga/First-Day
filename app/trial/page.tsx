@@ -1,3 +1,3 @@
 import TrialView from "@/components/TrialView";
 
-export default function TrialPage({ searchParams }: { searchParams?: { mentorId?: string; subjectId?: string } }) { return <TrialView mentorId={searchParams?.mentorId} subjectId={searchParams?.subjectId} />; }
+export default async function TrialPage({ searchParams }: { searchParams: Promise<{ subjectId?: string }> }) { const query = await searchParams; return <TrialView subjectId={query.subjectId} />; }

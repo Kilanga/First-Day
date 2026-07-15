@@ -24,6 +24,8 @@ anonymous mentor UUID stored in localStorage, sent with every API call.
 - Every OpenAI call goes through lib/openai.ts (strict JSON parsing where
   expected, one retry on malformed JSON, never crash on bad output).
 - Keep scope minimal: no streaming, no multi-hire, no accounts in v1.
+- Anonymous mentor data is private: protect API routes and reports with the signed mentor session; never put the mentor identifier in URLs.
+- Public releases must retain links to the privacy notice, terms of use, and legal notice. Do not represent the app as legally compliant until the publisher identity and contact details are configured.
 
 ## Definition of done for each task
 Code compiles, `pnpm build` passes, the feature is manually testable, and

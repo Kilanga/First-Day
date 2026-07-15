@@ -2,13 +2,16 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { orderedConcepts, type TrapMap } from "@/lib/prompts/trapmap";
+import { issueMentorSession, resolveMentorId } from "@/lib/mentorSession";
 
-export async function POST(request: Request, { params }: { params: { shareCode: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ shareCode: string }> }) {
   try {
-    const { mentorId } = await request.json();
-    if (typeof mentorId !== "string" || !mentorId.trim()) return NextResponse.json({ error: "A mentor session is required." }, { status: 400 });
+    const { shareCode } = await params;
+    const { mentorId: suppliedMentorId } = await request.json();
+    const mentorSession = resolveMentorId(request, suppliedMentorId);
+    const mentorId = mentorSession.mentorId;
     const template = await prisma.subject.findFirst({
-      where: { shareCode: params.shareCode, shareEnabled: true },
+      where: { shareCode, shareEnabled: true },
       include: { hire: true },
     });
     if (!template?.hire) return NextResponse.json({ error: "This shared learning link is no longer available." }, { status: 404 });
@@ -27,11 +30,12 @@ export async function POST(request: Request, { params }: { params: { shareCode: 
     });
     const firstQuestion = orderedConcepts(trapMap)[0]?.misconceptions[0]?.naive_question;
     if (!firstQuestion || !subject.hire) throw new Error("The shared learning has no first question.");
-    return NextResponse.json({
+    const response = NextResponse.json({
       subjectId: subject.id,
       firstQuestion,
       hire: { name: subject.hire.name },
     });
+    return mentorSession.shouldIssueCookie ? issueMentorSession(response, mentorId) : response;
   } catch (error) {
     console.error("Shared onboarding claim failed", error);
     return NextResponse.json({ error: "Unable to start this learning." }, { status: 502 });

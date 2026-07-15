@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { callJson, callText } from "@/lib/openai";
 import { prisma } from "@/lib/prisma";
+import { requireMentorId } from "@/lib/mentorSession";
+import { consumeAiActionQuota } from "@/lib/ratelimit";
 
 type GapReport = {
   strengths: string[];
@@ -44,14 +46,16 @@ function storedReport(value: Prisma.JsonValue | null): GapReport | null {
 export async function POST(request: Request) {
   try {
     const { sessionId, preview = false, refreshLanguage = false } = await request.json();
+    const mentorId = requireMentorId(request);
     if (typeof sessionId !== "string") return NextResponse.json({ error: "sessionId is required." }, { status: 400 });
-    const session = await prisma.learningSession.findUnique({
-      where: { id: sessionId },
+    const session = await prisma.learningSession.findFirst({
+      where: { id: sessionId, subject: { mentorId } },
       include: { messages: { orderBy: { createdAt: "asc" } }, subject: { include: { hire: true } } },
     });
     if (!session?.subject.hire) return NextResponse.json({ error: "Session not found." }, { status: 404 });
     const cachedReport = storedReport(session.gapReport);
     if (session.endedAt && cachedReport && (!refreshLanguage || cachedReport.language === "English")) return NextResponse.json({ sessionId: session.id, report: cachedReport, snapshotMessageCount: session.reportMessageCount, snapshotAt: session.reportSnapshotAt });
+    if (!cachedReport && !(await consumeAiActionQuota(mentorId, "report"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
 
     let report = cachedReport;
     if (report && refreshLanguage && report.language !== "English") {

@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client";
 import { callJson } from "@/lib/openai";
 import { prisma } from "@/lib/prisma";
 import type { TrapMap } from "@/lib/prompts/trapmap";
+import { requireMentorId } from "@/lib/mentorSession";
+import { consumeAiActionQuota } from "@/lib/ratelimit";
 
 type TrialQuestion = { conceptId: string; concept: string; question: string };
 type TrialAnswer = { conceptId: string; answer: string };
@@ -11,8 +13,10 @@ function previousTier(tier: string) { return tier === "confirmed" ? "month1" : t
 
 export async function POST(request: Request) {
   try {
-    const { mentorId, subjectId } = await request.json();
-    if (typeof mentorId !== "string" || typeof subjectId !== "string") return NextResponse.json({ error: "mentorId and subjectId are required." }, { status: 400 });
+    const { subjectId } = await request.json();
+    const mentorId = requireMentorId(request);
+    if (typeof subjectId !== "string") return NextResponse.json({ error: "subjectId is required." }, { status: 400 });
+    if (!(await consumeAiActionQuota(mentorId, "trial"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
     const subject = await prisma.subject.findFirst({ where: { id: subjectId, mentorId }, include: { hire: true, learnerState: true } });
     if (!subject?.hire) return NextResponse.json({ error: "Subject not found." }, { status: 404 });
 

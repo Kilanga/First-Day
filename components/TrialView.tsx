@@ -5,17 +5,17 @@ import { useState } from "react";
 type Result = { conceptId: string; concept: string; question: string; answer: string; correct: boolean };
 type Trial = { hireName: string; questions: Result[]; score: number; passed: boolean; failed: Array<{ conceptId: string; concept: string }>; tier: string };
 
-export default function TrialView({ mentorId, subjectId }: { mentorId?: string; subjectId?: string }) {
+export default function TrialView({ subjectId }: { subjectId?: string }) {
   const [trial, setTrial] = useState<Trial>();
   const [index, setIndex] = useState(0);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string>();
 
   async function start() {
-    if (!mentorId || !subjectId) { setError("Open this page with a mentor and subject ID to run a live trial."); return; }
+    if (!subjectId) { setError("Open this page from a learning subject to run a live trial."); return; }
     setRunning(true); setError(undefined); setIndex(0);
     try {
-      const response = await fetch("/api/trial", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mentorId, subjectId }) });
+      const response = await fetch("/api/trial", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subjectId }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Unable to start the trial.");
       setTrial(data);

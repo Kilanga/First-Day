@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { orderedConcepts, type TrapMap } from "@/lib/prompts/trapmap";
+import { requireMentorId } from "@/lib/mentorSession";
 
 function nextQuestion(trapMap: TrapMap, states: Array<{ conceptId: string; status: string }>) {
   const statusById = new Map(states.map((state) => [state.conceptId, state.status]));
@@ -12,8 +13,9 @@ function nextQuestion(trapMap: TrapMap, states: Array<{ conceptId: string; statu
 }
 
 export async function GET(request: Request) {
-  const mentorId = new URL(request.url).searchParams.get("mentorId");
-  if (!mentorId) return NextResponse.json({ error: "mentorId is required." }, { status: 400 });
+  let mentorId: string;
+  try { mentorId = requireMentorId(request); }
+  catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Private session required." }, { status: 401 }); }
   const subjects = await prisma.subject.findMany({
     where: { mentorId },
     orderBy: { createdAt: "desc" },

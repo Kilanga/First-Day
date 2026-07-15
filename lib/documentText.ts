@@ -5,6 +5,7 @@ const MAX_FILES = 4;
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
 const MAX_EXTRACTED_CHARS = 50_000;
+const MAX_ARCHIVE_UNCOMPRESSED_BYTES = 16 * 1024 * 1024;
 const SUPPORTED_EXTENSIONS = new Set(["md", "txt", "docx", "pptx", "pdf"]);
 
 export type ImportedSource = { name: string; type: string; characters: number };
@@ -15,6 +16,7 @@ function decodeXml(value: string) { return value.replace(/&amp;/g, "&").replace(
 
 async function extractPptx(buffer: Buffer) {
   const zip = await JSZip.loadAsync(buffer);
+  assertArchiveSize(zip);
   const slides = Object.keys(zip.files)
     .filter((name) => /^ppt\/slides\/slide\d+\.xml$/.test(name))
     .sort((a, b) => Number(a.match(/slide(\d+)/)?.[1]) - Number(b.match(/slide(\d+)/)?.[1]));
@@ -24,6 +26,16 @@ async function extractPptx(buffer: Buffer) {
     return words.length ? `Slide ${index + 1}: ${words.join(" ")}` : "";
   }));
   return text.filter(Boolean).join("\n\n");
+}
+
+function assertArchiveSize(zip: JSZip) {
+  const size = Object.values(zip.files).reduce((total, file) => total + ((file as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize ?? 0), 0);
+  if (size > MAX_ARCHIVE_UNCOMPRESSED_BYTES) throw new Error("This document expands beyond the safe import limit.");
+}
+
+async function assertZipDocument(buffer: Buffer) {
+  if (buffer[0] !== 0x50 || buffer[1] !== 0x4b) throw new Error("The selected file is not a valid Office document.");
+  assertArchiveSize(await JSZip.loadAsync(buffer));
 }
 
 async function extractPdf(buffer: Buffer) {
@@ -48,9 +60,12 @@ async function extractOne(file: File) {
   const type = extension(file.name);
   const buffer = Buffer.from(await file.arrayBuffer());
   if (type === "md" || type === "txt") return new TextDecoder().decode(buffer);
-  if (type === "docx") return (await mammoth.extractRawText({ buffer })).value;
+  if (type === "docx") { await assertZipDocument(buffer); return (await mammoth.extractRawText({ buffer })).value; }
   if (type === "pptx") return extractPptx(buffer);
-  if (type === "pdf") return extractPdf(buffer);
+  if (type === "pdf") {
+    if (buffer.subarray(0, 5).toString("ascii") !== "%PDF-") throw new Error("The selected file is not a valid PDF.");
+    return extractPdf(buffer);
+  }
   throw new Error(`Unsupported file type: ${file.name}.`);
 }
 

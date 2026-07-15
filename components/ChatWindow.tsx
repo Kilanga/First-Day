@@ -2,11 +2,11 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { HireView } from "./HireCard";
+import { ensureMentorSession } from "@/lib/mentorClient";
 
 export type ChatMessage = { id: string; role: "mentor" | "hire"; content: string; feedback?: { summary: string; nextStep?: string } };
 type Props = {
   subjectId?: string;
-  mentorId?: string;
   hire: HireView;
   initialQuestion?: string;
   initialSessionId?: string;
@@ -14,7 +14,7 @@ type Props = {
   onHireUpdate: (hire: HireView, xpDelta: number, tierUp: boolean, sessionId: string, breakthrough: boolean, agendaComplete: boolean) => void;
 };
 
-export default function ChatWindow({ subjectId, mentorId, hire, initialQuestion, initialSessionId, initialMessages, onHireUpdate }: Props) {
+export default function ChatWindow({ subjectId, hire, initialQuestion, initialSessionId, initialMessages, onHireUpdate }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialQuestion ? [{ id: "first-question", role: "hire", content: initialQuestion }] : []);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -48,8 +48,9 @@ export default function ChatWindow({ subjectId, mentorId, hire, initialQuestion,
     const reviewTimer = window.setTimeout(() => setThinkingLabel("Reviewing the important details…"), 900);
     const replyTimer = window.setTimeout(() => setThinkingLabel(`${hire.name} is preparing the next question…`), 2600);
     try {
-      if (!subjectId || !mentorId) throw new Error("Open Office with a subject and mentor ID to start a live conversation.");
-      const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mentorId, subjectId, sessionId, message }) });
+      if (!subjectId) throw new Error("Open a learning subject to start a live conversation.");
+      await ensureMentorSession();
+      const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subjectId, sessionId, message }) });
       const data = await response.json();
       if (!response.ok) throw new Error(response.status === 429 ? "The office is closed for today — come back tomorrow." : data.error ?? "Unable to send the message.");
       setSessionId(data.sessionId);

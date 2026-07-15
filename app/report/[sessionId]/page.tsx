@@ -4,6 +4,8 @@ import GapReport from "@/components/GapReport";
 import MentorFeedback from "@/components/MentorFeedback";
 import ReportLanguageGuard from "@/components/ReportLanguageGuard";
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
+import { getMentorIdFromCookieHeader, MENTOR_SESSION_COOKIE } from "@/lib/mentorSession";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +16,13 @@ type GapReportData = {
   language?: "English";
 };
 
-export default async function ReportPage({ params }: { params: { sessionId: string } }) {
-  const session = await prisma.learningSession.findUnique({
-    where: { id: params.sessionId },
+export default async function ReportPage({ params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = await params;
+  const cookieStore = await cookies();
+  const mentorId = getMentorIdFromCookieHeader(`${MENTOR_SESSION_COOKIE}=${cookieStore.get(MENTOR_SESSION_COOKIE)?.value ?? ""}`);
+  if (!mentorId) notFound();
+  const session = await prisma.learningSession.findFirst({
+    where: { id: sessionId, subject: { mentorId } },
     include: { subject: { include: { hire: true } } },
   });
   if (!session?.subject.hire) notFound();
@@ -25,7 +31,6 @@ export default async function ReportPage({ params }: { params: { sessionId: stri
   const hire = session.subject.hire;
   const followUp = `/office?${new URLSearchParams({
     subjectId: session.subjectId,
-    mentorId: session.subject.mentorId,
     title: session.subject.title,
     hireName: hire.name,
   })}`;

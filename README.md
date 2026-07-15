@@ -110,6 +110,11 @@ Create `.env` from `.env.example` and provide:
 OPENAI_API_KEY=...
 DATABASE_URL=...
 DAILY_MESSAGE_CAP=50
+DAILY_AI_CALL_CAP=100
+MENTOR_SESSION_SECRET=use-a-random-value-with-at-least-32-characters
+NEXT_PUBLIC_LEGAL_PUBLISHER_NAME=Your legal name or company name
+NEXT_PUBLIC_LEGAL_CONTACT_EMAIL=privacy@your-domain.example
+NEXT_PUBLIC_LEGAL_HOST_NAME=Vercel Inc.
 ```
 
 Then run:
@@ -121,6 +126,15 @@ corepack pnpm dev
 ```
 
 For production, Vercel runs the `build` script, which deploys Prisma migrations, generates Prisma Client, and builds Next.js.
+
+## Privacy and deployment safeguards
+
+- Private learning data is protected by a signed, HTTP-only anonymous-session cookie. Never share a report URL as a way to share a learning; use **Share this learning** instead.
+- Imported document text is transient: it is sent once to generate the trap map and is not retained. Do not upload confidential material unless your OpenAI and data-handling policies permit it.
+- The application includes `/privacy`, `/terms`, and `/legal`, together with a **Delete my data** control on the learning desk. Before any public launch, configure the publisher name and legal contact in Vercel; legal text is a practical starting point, not legal advice.
+- Shared-learning links are bearer links: anyone with the link can open the reusable template. Do not share confidential material through them.
+- Set `MENTOR_SESSION_SECRET` in Vercel before deploying this version. Use a unique random value of at least 32 characters. Configure Neon with its pooled connection URL for production traffic.
+- The app pins Node 24 and pnpm 10 for Vercel compatibility.
 
 ## Manual test flow
 

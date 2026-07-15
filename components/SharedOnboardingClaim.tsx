@@ -2,15 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-function mentorId() {
-  const key = "first-day-mentor-id";
-  const existing = localStorage.getItem(key);
-  if (existing) return existing;
-  const id = crypto.randomUUID();
-  localStorage.setItem(key, id);
-  return id;
-}
+import { localMentorId } from "@/lib/mentorClient";
 
 export default function SharedOnboardingClaim({ shareCode, title, hireName }: { shareCode: string; title: string; hireName: string }) {
   const router = useRouter();
@@ -21,10 +13,10 @@ export default function SharedOnboardingClaim({ shareCode, title, hireName }: { 
     setLoading(true);
     setError(undefined);
     try {
-      const response = await fetch(`/api/shared-subjects/${shareCode}/claim`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mentorId: mentorId() }) });
+      const response = await fetch(`/api/shared-subjects/${shareCode}/claim`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mentorId: localMentorId() }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Unable to start this learning.");
-      const query = new URLSearchParams({ subjectId: data.subjectId, mentorId: mentorId(), title, hireName: data.hire.name, firstQuestion: data.firstQuestion });
+      const query = new URLSearchParams({ subjectId: data.subjectId, title, hireName: data.hire.name, firstQuestion: data.firstQuestion });
       router.push(`/office?${query}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to start this learning.");
