@@ -24,9 +24,13 @@ export async function GET(request: Request) {
     },
   });
   return NextResponse.json({
-    subjects: subjects.filter((subject) => subject.hire).map((subject) => ({
+    subjects: subjects.filter((subject) => subject.hire).map((subject) => {
+      const active = subject.sessions.find((session) => !session.endedAt);
+      const completed = subject.sessions.filter((session) => session.endedAt);
+      return {
       id: subject.id,
       title: subject.title,
+      shareEnabled: subject.shareEnabled,
       firstQuestion: nextQuestion(subject.trapMap as unknown as TrapMap, subject.learnerState),
       hire: {
         name: subject.hire!.name,
@@ -45,13 +49,14 @@ export async function GET(request: Request) {
         const notebook = state?.notebookEntry as { text?: unknown } | null;
         return { id: concept.id, name: concept.name, status: state?.status ?? "not_covered", notebookEntry: typeof notebook?.text === "string" ? notebook.text : undefined };
       }),
-      activeSession: subject.sessions.find((session) => !session.endedAt) ? {
-        id: subject.sessions.find((session) => !session.endedAt)!.id,
-        agenda: subject.sessions.find((session) => !session.endedAt)!.agenda,
-        agendaBonusAwarded: subject.sessions.find((session) => !session.endedAt)!.agendaBonusAwarded,
-        messages: [...subject.sessions.find((session) => !session.endedAt)!.messages].reverse().map((message) => ({ id: message.id, role: message.role, content: message.content })),
+      activeSession: active ? {
+        id: active.id,
+        agenda: active.agenda,
+        agendaBonusAwarded: active.agendaBonusAwarded,
+        messages: [...active.messages].reverse().map((message) => ({ id: message.id, role: message.role, content: message.content })),
       } : null,
-      latestCompletedSession: subject.sessions.find((session) => session.endedAt) ? { id: subject.sessions.find((session) => session.endedAt)!.id } : null,
-    })),
+      latestCompletedSession: completed[0] ? { id: completed[0].id } : null,
+      completedSessions: completed.map((session) => ({ id: session.id, endedAt: session.endedAt!.toISOString() })),
+    }; }),
   });
 }

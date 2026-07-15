@@ -14,8 +14,8 @@ The product is built around the protégé effect: people consolidate knowledge w
 - Tracks what the colleague has genuinely understood, without revealing the hidden assessment system in the conversation.
 - Turns progress into in-character artifacts: a notebook, a session agenda, breakthrough moments, a journal entry, and a skills matrix.
 - Produces an end-of-session teaching report and a short 360-style note from the colleague.
-- Supports several subjects and resumable sessions for one anonymous browser-based mentor.
-- Lets a mentor share a learning through a public link. Recipients receive the same subject and colleague personality, but a fresh private chat, progress state, journal, and reports.
+- Supports several subjects, resumable sessions, and a lightweight report history for one anonymous browser-based mentor.
+- Lets a mentor share a learning through a public link. Recipients receive the same subject and colleague personality, but a fresh private chat, progress state, journal, and reports. Mentors can copy, renew, or disable a shared link.
 
 The fixed demo trap map is deliberately deferred while the core product is being refined.
 
@@ -132,7 +132,8 @@ For production, Vercel runs the `build` script, which deploys Prisma migrations,
 6. Open the notebook and hover skills-matrix cells for the colleague's notes.
 7. End the session; verify the journal, report, and the feedback request.
 8. Return to the dashboard: completed subjects open their latest report, while “Start a new session” begins a fresh conversation.
-9. Use “Share this learning”, open the copied link in a private window, and verify that the recipient gets the same subject and colleague but no prior messages or XP.
+9. Open “Learning history” and verify each completed session links to its saved report.
+10. Use “Share this learning”, open the copied link in a private window, and verify that the recipient gets the same subject and colleague but no prior messages or XP. Copy, renew, then disable the link and verify that the disabled link no longer opens.
 
 ## Current v1 boundaries
 
