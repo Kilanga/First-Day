@@ -14,7 +14,13 @@ export async function POST(request: Request) {
     }
     return NextResponse.json(await orchestrateChat(body));
   } catch (error) {
-    console.error("Chat request failed", error);
-    return NextResponse.json({ error: "Unable to process this message." }, { status: 502 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Chat request failed", { message });
+    const temporarilyUnavailable = /quota|rate limit|insufficient_quota/i.test(message);
+    return NextResponse.json({
+      error: temporarilyUnavailable
+        ? "The office is temporarily unavailable. Please try again in a little while."
+        : "We couldn't process that explanation. Please try again.",
+    }, { status: temporarilyUnavailable ? 503 : 502 });
   }
 }

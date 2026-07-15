@@ -34,6 +34,12 @@ export async function GET(request: Request) {
         xp: subject.hire!.xp,
         stats: { comprehension: subject.hire!.statComprehension, autonomy: subject.hire!.statAutonomy, reflexes: subject.hire!.statReflexes, confidence: subject.hire!.statConfidence },
       },
+      progress: {
+        explored: subject.learnerState.filter((state) => state.status !== "not_covered").length,
+        mastered: subject.learnerState.filter((state) => state.status === "mastered").length,
+        toRevisit: subject.learnerState.filter((state) => state.status === "weak" || state.status === "partial").length,
+        total: subject.learnerState.length,
+      },
       activeSession: subject.sessions[0] ? {
         id: subject.sessions[0].id,
         messages: subject.sessions[0].messages.map((message) => ({ id: message.id, role: message.role, content: message.content })),

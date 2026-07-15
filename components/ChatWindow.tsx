@@ -25,6 +25,7 @@ export default function ChatWindow({ subjectId, mentorId, hire, initialQuestion,
   const [messages, setMessages] = useState<ChatMessage[]>(initialQuestion ? [{ id: "first-question", role: "hire", content: initialQuestion }] : []);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
+  const [thinkingLabel, setThinkingLabel] = useState("");
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [error, setError] = useState<string>();
   const subjectRef = useRef(subjectId);
@@ -46,8 +47,10 @@ export default function ChatWindow({ subjectId, mentorId, hire, initialQuestion,
     event.preventDefault();
     const message = draft.trim();
     if (!message || thinking) return;
-    setDraft(""); setError(""); setThinking(true);
+    setDraft(""); setError(""); setThinking(true); setThinkingLabel(`${hire.name} is reading your explanation…`);
     setMessages((current) => [...current, { id: crypto.randomUUID(), role: "mentor", content: message }]);
+    const reviewTimer = window.setTimeout(() => setThinkingLabel("Reviewing the important details…"), 900);
+    const replyTimer = window.setTimeout(() => setThinkingLabel(`${hire.name} is preparing the next question…`), 2600);
     try {
       if (!subjectId || !mentorId) throw new Error("Open Office with a subject and mentor ID to start a live conversation.");
       const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mentorId, subjectId, sessionId, message }) });
@@ -58,7 +61,7 @@ export default function ChatWindow({ subjectId, mentorId, hire, initialQuestion,
       onHireUpdate(data.hire, data.xpDelta, data.tierUp, data.sessionId);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to send the message.");
-    } finally { setThinking(false); }
+    } finally { window.clearTimeout(reviewTimer); window.clearTimeout(replyTimer); setThinking(false); }
   }
 
   const initials = hire.name.slice(0, 2).toUpperCase();
@@ -73,7 +76,7 @@ export default function ChatWindow({ subjectId, mentorId, hire, initialQuestion,
         </div>
         {message.feedback ? <div className="ml-11 max-w-[80%] rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3"><div className="flex items-center justify-between gap-3"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-700">Teaching feedback</p><span className="text-xs font-bold text-indigo-700">{message.feedback.impact}/10 · +{message.feedback.xp} XP</span></div><p className="mt-1 text-sm text-slate-700">{message.feedback.summary}</p>{message.feedback.nextStep ? <p className="mt-2 text-xs leading-5 text-indigo-800">{message.feedback.nextStep}</p> : null}</div> : null}
       </div>)}
-      {thinking ? <div className="flex items-center gap-3"><div className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div><div className="rounded-2xl rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-500"><span className="typing-dot">●</span><span className="typing-dot">●</span><span className="typing-dot">●</span> {hire.name} is thinking…</div></div> : null}
+      {thinking ? <div className="flex items-center gap-3"><div className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div><div className="rounded-2xl rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-500"><span className="typing-dot">●</span><span className="typing-dot">●</span><span className="typing-dot">●</span> {thinkingLabel}</div></div> : null}
     </div>
     <form onSubmit={send} className="border-t border-slate-100 p-4"><div className="flex gap-3"><textarea value={draft} onChange={(event) => setDraft(event.target.value)} rows={2} placeholder="Explain it to your new hire…" className="min-h-[48px] flex-1 resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" /><button disabled={!draft.trim() || thinking} className="rounded-xl bg-indigo-600 px-5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40">Send</button></div>{error ? <p className="mt-2 text-xs text-rose-600">{error}</p> : null}</form>
   </section>;
