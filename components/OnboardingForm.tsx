@@ -16,8 +16,11 @@ export default function OnboardingForm() {
     const trapTimer = window.setTimeout(() => setStage("Finding the questions a new hire would ask…"), 900);
     const hireTimer = window.setTimeout(() => setStage("Your new hire is getting ready…"), 2000);
     try {
-      const payload = new FormData(); payload.set("mentorId", mentorId()); payload.set("title", title); if (notes.trim()) payload.set("notes", notes); files.forEach((file) => payload.append("files", file));
-      const response = await fetch("/api/subjects", { method: "POST", body: payload }); const data = await response.json();
+      const id = mentorId(); const payload = new FormData(); payload.set("mentorId", id); payload.set("title", title); if (notes.trim()) payload.set("notes", notes); files.forEach((file) => payload.append("files", file));
+      // Retain the two small identifiers in the URL as a fallback for multipart
+      // uploads handled by restrictive proxies.
+      const query = new URLSearchParams({ mentorId: id, title });
+      const response = await fetch(`/api/subjects?${query}`, { method: "POST", body: payload }); const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Unable to create your subject."); setCreated(data);
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to create your subject."); }
     finally { window.clearTimeout(trapTimer); window.clearTimeout(hireTimer); setLoading(false); setStage(""); }

@@ -13,12 +13,18 @@ const TRAITS = ["always taking notes on a battered notepad", "slightly too much 
 type SubjectInput = { mentorId?: unknown; title?: unknown; notes?: unknown; demo?: unknown; files: File[] };
 
 function pickTraits() { return [...TRAITS].sort(() => Math.random() - 0.5).slice(0, 3); }
+function textField(value: FormDataEntryValue | null) { return typeof value === "string" ? value : undefined; }
 
 async function readInput(request: Request): Promise<SubjectInput> {
+  const fallback = new URL(request.url).searchParams;
   if (request.headers.get("content-type")?.includes("multipart/form-data")) {
     const form = await request.formData();
     return {
-      mentorId: form.get("mentorId"), title: form.get("title"), notes: form.get("notes"), demo: form.get("demo"),
+      // The query fallbacks keep the creation flow resilient if a browser or proxy
+      // drops multipart text fields while uploading a document.
+      mentorId: textField(form.get("mentorId")) ?? fallback.get("mentorId") ?? undefined,
+      title: textField(form.get("title")) ?? fallback.get("title") ?? undefined,
+      notes: textField(form.get("notes")), demo: textField(form.get("demo")),
       files: form.getAll("files").filter((value): value is File => value instanceof File),
     };
   }
@@ -30,9 +36,9 @@ export async function POST(request: Request) {
   try {
     const body = await readInput(request);
     const isDemo = body.demo === true || body.demo === "true";
-    if (typeof body.mentorId !== "string" || (!isDemo && (typeof body.title !== "string" || !body.title.trim() || body.title.length > 120)) || (body.notes !== undefined && typeof body.notes !== "string")) {
-      return NextResponse.json({ error: "A mentor ID and a subject title are required." }, { status: 400 });
-    }
+    if (typeof body.mentorId !== "string" || !body.mentorId.trim()) return NextResponse.json({ error: "Your mentor session could not be initialized. Refresh the page and try again." }, { status: 400 });
+    if (!isDemo && (typeof body.title !== "string" || !body.title.trim() || body.title.length > 120)) return NextResponse.json({ error: "Add a subject title (up to 120 characters) to continue." }, { status: 400 });
+    if (body.notes !== undefined && typeof body.notes !== "string") return NextResponse.json({ error: "Your study notes could not be read. Please try again." }, { status: 400 });
     if (typeof body.notes === "string" && body.notes.length > 12_000) return NextResponse.json({ error: "Study notes must be 12,000 characters or shorter." }, { status: 400 });
 
     const mentorId = body.mentorId as string;
