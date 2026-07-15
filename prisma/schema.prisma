@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Mentor {
+  id        String    @id
+  createdAt DateTime  @default(now())
+  hires     Hire[]
+  subjects  Subject[]
+}
+
+model Subject {
+  id           String            @id @default(cuid())
+  mentorId     String
+  mentor       Mentor            @relation(fields: [mentorId], references: [id])
+  title        String
+  sourceNotes  String?
+  trapMap      Json
+  createdAt    DateTime          @default(now())
+  hire         Hire?
+  sessions     LearningSession[]
+  learnerState ConceptState[]
+}
+
+model Hire {
+  id                String  @id @default(cuid())
+  mentorId          String
+  mentor            Mentor  @relation(fields: [mentorId], references: [id])
+  subjectId         String  @unique
+  subject           Subject @relation(fields: [subjectId], references: [id])
+  name              String
+  personality       Json
+  xp                Int     @default(0)
+  statComprehension Int     @default(0)
+  statAutonomy      Int     @default(0)
+  statReflexes      Int     @default(0)
+  statConfidence    Int     @default(0)
+  tier              String  @default("week1")
+  memories          Json    @default("[]")
+}
+
+model LearningSession {
+  id        String    @id @default(cuid())
+  subjectId String
+  subject   Subject   @relation(fields: [subjectId], references: [id])
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  gapReport Json?
+  messages  Message[]
+}
+
+model Message {
+  id        String          @id @default(cuid())
+  sessionId String
+  session   LearningSession @relation(fields: [sessionId], references: [id])
+  role      String
+  content   String
+  conceptId String?
+  verdict   Json?
+  createdAt DateTime        @default(now())
+}
+
+model ConceptState {
+  id        String  @id @default(cuid())
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  conceptId String
+  status    String  @default("not_covered")
+  attempts  Int     @default(0)
+
+  @@unique([subjectId, conceptId])
+}
+
+model RateLimitCounter {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
