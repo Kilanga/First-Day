@@ -75,3 +75,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { mentorId, subjectId } = await request.json();
+    if (typeof mentorId !== "string" || typeof subjectId !== "string") return NextResponse.json({ error: "mentorId and subjectId are required." }, { status: 400 });
+    const subject = await prisma.subject.findFirst({ where: { id: subjectId, mentorId }, select: { id: true, hire: { select: { id: true } }, sessions: { select: { id: true } } } });
+    if (!subject) return NextResponse.json({ error: "Learning subject not found." }, { status: 404 });
+    const sessionIds = subject.sessions.map((session) => session.id);
+    await prisma.$transaction([
+      prisma.message.deleteMany({ where: { sessionId: { in: sessionIds } } }),
+      prisma.learningSession.deleteMany({ where: { subjectId } }),
+      prisma.conceptState.deleteMany({ where: { subjectId } }),
+      prisma.hire.deleteMany({ where: { subjectId } }),
+      prisma.subject.delete({ where: { id: subjectId } }),
+    ]);
+    return NextResponse.json({ deleted: true });
+  } catch (error) {
+    console.error("Subject deletion failed", error);
+    return NextResponse.json({ error: "Unable to delete this learning subject." }, { status: 502 });
+  }
+}

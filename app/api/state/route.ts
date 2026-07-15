@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     include: {
       hire: true,
       learnerState: true,
-      sessions: { where: { endedAt: null }, orderBy: { startedAt: "desc" }, take: 1, include: { messages: { orderBy: { createdAt: "desc" }, take: 60 } } },
+      sessions: { orderBy: { startedAt: "desc" }, take: 12, include: { messages: { orderBy: { createdAt: "desc" }, take: 60 } } },
     },
   });
   return NextResponse.json({
@@ -45,12 +45,13 @@ export async function GET(request: Request) {
         const notebook = state?.notebookEntry as { text?: unknown } | null;
         return { id: concept.id, name: concept.name, status: state?.status ?? "not_covered", notebookEntry: typeof notebook?.text === "string" ? notebook.text : undefined };
       }),
-      activeSession: subject.sessions[0] ? {
-        id: subject.sessions[0].id,
-        agenda: subject.sessions[0].agenda,
-        agendaBonusAwarded: subject.sessions[0].agendaBonusAwarded,
-        messages: [...subject.sessions[0].messages].reverse().map((message) => ({ id: message.id, role: message.role, content: message.content })),
+      activeSession: subject.sessions.find((session) => !session.endedAt) ? {
+        id: subject.sessions.find((session) => !session.endedAt)!.id,
+        agenda: subject.sessions.find((session) => !session.endedAt)!.agenda,
+        agendaBonusAwarded: subject.sessions.find((session) => !session.endedAt)!.agendaBonusAwarded,
+        messages: [...subject.sessions.find((session) => !session.endedAt)!.messages].reverse().map((message) => ({ id: message.id, role: message.role, content: message.content })),
       } : null,
+      latestCompletedSession: subject.sessions.find((session) => session.endedAt) ? { id: subject.sessions.find((session) => session.endedAt)!.id } : null,
     })),
   });
 }
