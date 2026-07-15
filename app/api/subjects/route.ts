@@ -14,6 +14,9 @@ type SubjectInput = { mentorId?: unknown; title?: unknown; notes?: unknown; demo
 
 function pickTraits() { return [...TRAITS].sort(() => Math.random() - 0.5).slice(0, 3); }
 function textField(value: FormDataEntryValue | null) { return typeof value === "string" ? value : undefined; }
+function isUploadedFile(value: FormDataEntryValue): value is File {
+  return typeof value !== "string" && typeof value === "object" && value !== null && "arrayBuffer" in value && typeof value.arrayBuffer === "function";
+}
 
 async function readInput(request: Request): Promise<SubjectInput> {
   const fallback = new URL(request.url).searchParams;
@@ -25,7 +28,9 @@ async function readInput(request: Request): Promise<SubjectInput> {
       mentorId: textField(form.get("mentorId")) ?? fallback.get("mentorId") ?? undefined,
       title: textField(form.get("title")) ?? fallback.get("title") ?? undefined,
       notes: textField(form.get("notes")), demo: textField(form.get("demo")),
-      files: form.getAll("files").filter((value): value is File => value instanceof File),
+      // Do not use `instanceof File`: Node runtimes do not consistently expose
+      // the browser File constructor, even though formData() provides file-like values.
+      files: form.getAll("files").filter(isUploadedFile),
     };
   }
   const body = await request.json();
@@ -71,7 +76,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ subjectId: subject.id, hire: { name: subject.hire.name, tier: subject.hire.tier, xp: subject.hire.xp, stats: { comprehension: subject.hire.statComprehension, autonomy: subject.hire.statAutonomy, reflexes: subject.hire.statReflexes, confidence: subject.hire.statConfidence }, personality }, firstQuestion });
   } catch (error) {
     console.error("Subject creation failed", error);
-    const message = error instanceof Error && /document|supported|larger|read any text|Add up to/i.test(error.message) ? error.message : "Unable to create this subject.";
+    const message = error instanceof Error && /document|supported|larger|read any text|couldn't read|Add up to/i.test(error.message) ? error.message : "Unable to create this subject.";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }

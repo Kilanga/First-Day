@@ -55,7 +55,14 @@ export async function extractSourceDocuments(files: File[]) {
     const type = extension(file.name);
     if (!SUPPORTED_EXTENSIONS.has(type)) throw new Error(`${file.name} is not a supported document type.`);
     if (file.size > MAX_FILE_BYTES) throw new Error(`${file.name} is larger than the 3 MB limit.`);
-    const text = cleanText(await extractOne(file));
+    let extracted: string;
+    try {
+      extracted = await extractOne(file);
+    } catch (error) {
+      console.error(`Document extraction failed for ${file.name}`, error);
+      throw new Error(`We couldn't read ${file.name}. Please use a text-based, unprotected document, or paste the relevant text instead.`);
+    }
+    const text = cleanText(extracted);
     if (!text) throw new Error(`We could not read any text from ${file.name}. If it is a scanned PDF, paste its text instead.`);
     const remaining = MAX_EXTRACTED_CHARS - parts.join("\n").length;
     if (remaining <= 0) break;
