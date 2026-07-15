@@ -5,7 +5,7 @@ import { orderedConcepts, type TrapMap } from "@/lib/prompts/trapmap";
 import { prisma } from "@/lib/prisma";
 import demoTrapMap from "@/public/demo/pm-fundamentals.json";
 import { assertMentorSessionConfigured, issueMentorSession, requireMentorId, resolveMentorId } from "@/lib/mentorSession";
-import { consumeAiActionQuota, consumeIpQuota } from "@/lib/ratelimit";
+import { consumeAiActionQuota, consumeIpQuota, refundAiActionQuota } from "@/lib/ratelimit";
 import { logOperationalEvent } from "@/lib/telemetry";
 import { startSubjectGeneration } from "@/lib/subjectGeneration";
 
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     });
     if (!isDemo) {
       try { await startSubjectGeneration(subject.id, generationPrompt); }
-      catch { await prisma.subject.update({ where: { id: subject.id }, data: { generationStatus: "failed", generationError: "We could not start preparing this study path. Try again." } }); }
+      catch { await prisma.subject.update({ where: { id: subject.id }, data: { generationStatus: "failed", generationError: "We could not start preparing this study path. Try again." } }); await refundAiActionQuota(mentorId, "subject"); }
     }
     const firstQuestion = trapMap ? orderedConcepts(trapMap)[0]?.misconceptions[0]?.naive_question : undefined;
     if (!subject.hire) throw new Error("The study partner could not be created.");

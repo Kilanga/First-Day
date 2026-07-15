@@ -30,7 +30,9 @@ async function consumeCounter(key: string, limit: number, windowMs: number) {
 
 /** Protects model-backed routes other than chat from accidental or abusive spend. */
 export async function consumeAiActionQuota(mentorId: string, action: "subject" | "report" | "feedback" | "trial") {
-  const hourlyLimit = action === "subject" || action === "trial" ? 5 : 10;
+  const configuredSubjectCap = Number(process.env.SUBJECT_HOURLY_CAP ?? 10);
+  const subjectHourlyCap = Number.isFinite(configuredSubjectCap) && configuredSubjectCap > 0 ? configuredSubjectCap : 10;
+  const hourlyLimit = action === "subject" ? subjectHourlyCap : action === "trial" ? 5 : 10;
   const dailyCap = Number(process.env.DAILY_AI_CALL_CAP ?? 100);
   const day = new Date().toISOString().slice(0, 10);
   const actionAllowed = await consumeCounter(`ai:${action}:${mentorId}`, hourlyLimit, HOUR_MS);
@@ -40,6 +42,15 @@ export async function consumeAiActionQuota(mentorId: string, action: "subject" |
     await prisma.rateLimitCounter.updateMany({ where: { key: `ai:${action}:${mentorId}`, count: { gt: 0 } }, data: { count: { decrement: 1 } } });
   }
   return dailyAllowed;
+}
+
+/** Reverses a model-action reservation when no request reached the model. */
+export async function refundAiActionQuota(mentorId: string, action: "subject" | "report" | "feedback" | "trial") {
+  const day = new Date().toISOString().slice(0, 10);
+  await prisma.$transaction([
+    prisma.rateLimitCounter.updateMany({ where: { key: `ai:${action}:${mentorId}`, count: { gt: 0 } }, data: { count: { decrement: 1 } } }),
+    prisma.rateLimitCounter.updateMany({ where: { key: `ai:daily:${day}`, count: { gt: 0 } }, data: { count: { decrement: 1 } } }),
+  ]);
 }
 
 export async function consumeMessageQuota(mentorId: string) {
