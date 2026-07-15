@@ -82,8 +82,9 @@ export async function POST(request: Request) {
       },
       include: { hire: true },
     });
+    let generationStarted = isDemo;
     if (!isDemo) {
-      try { await startSubjectGeneration(subject.id, generationPrompt); }
+      try { await startSubjectGeneration(subject.id, generationPrompt); generationStarted = true; }
       catch (error) {
         const details = error as { name?: unknown; message?: unknown; status?: unknown; code?: unknown };
         console.error("Subject background start failed", {
@@ -98,8 +99,8 @@ export async function POST(request: Request) {
     }
     const firstQuestion = trapMap ? orderedConcepts(trapMap)[0]?.misconceptions[0]?.naive_question : undefined;
     if (!subject.hire) throw new Error("The study partner could not be created.");
-    const response = NextResponse.json({ subjectId: subject.id, status: isDemo ? "ready" : "preparing", hire: { name: subject.hire.name, tier: subject.hire.tier, xp: subject.hire.xp, stats: { comprehension: subject.hire.statComprehension, autonomy: subject.hire.statAutonomy, reflexes: subject.hire.statReflexes, confidence: subject.hire.statConfidence }, personality }, firstQuestion });
-    logOperationalEvent("subject.created", { durationMs: Date.now() - startedAt, demo: isDemo });
+    const response = NextResponse.json({ subjectId: subject.id, status: generationStarted ? (isDemo ? "ready" : "preparing") : "failed", hire: { name: subject.hire.name, tier: subject.hire.tier, xp: subject.hire.xp, stats: { comprehension: subject.hire.statComprehension, autonomy: subject.hire.statAutonomy, reflexes: subject.hire.statReflexes, confidence: subject.hire.statConfidence }, personality }, firstQuestion });
+    logOperationalEvent(generationStarted ? "subject.created" : "subject.generation_start_failed", { durationMs: Date.now() - startedAt, demo: isDemo });
     return mentorSession.shouldIssueCookie ? issueMentorSession(response, mentorId) : response;
   } catch (error) {
     console.error("Subject creation failed", error);

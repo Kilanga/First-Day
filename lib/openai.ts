@@ -73,7 +73,9 @@ export async function startBackgroundJson(system: string, user: string, schemaHi
     model: MODEL,
     background: true,
     instructions: `${system}\n\nReturn one valid JSON object only. Schema guidance: ${schemaHint}`,
-    input: user,
+    // The Responses API requires the input itself to explicitly mention JSON
+    // when json_object mode is selected; instructions alone do not satisfy it.
+    input: `${user}\n\nReturn JSON only.`,
     text: { format: { type: "json_object" } },
   }, { timeout: 15_000 });
   return { id: response.id, status: response.status ?? "queued" };
