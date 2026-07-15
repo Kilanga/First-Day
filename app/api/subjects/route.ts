@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 
 const NAMES = ["Sam", "Alex", "Jordan", "Riley", "Casey", "Morgan", "Charlie", "Taylor", "Jamie", "Quinn"];
 const TRAITS = ["always taking notes on a battered notepad", "slightly too much coffee", "worried about the probation review", "quotes their professor from time to time", "over-apologizes when confused", "gets visibly excited when something clicks", "keeps a list of 'questions I was afraid to ask'", "compares everything to their student job at a bakery"];
-type SubjectInput = { mentorId?: unknown; title?: unknown; notes?: unknown; demo?: unknown; files: File[] };
+type SubjectInput = { mentorId?: unknown; title?: unknown; notes?: unknown; focus?: unknown; demo?: unknown; files: File[] };
 
 function pickTraits() { return [...TRAITS].sort(() => Math.random() - 0.5).slice(0, 3); }
 function textField(value: FormDataEntryValue | null) { return typeof value === "string" ? value : undefined; }
@@ -27,7 +27,7 @@ async function readInput(request: Request): Promise<SubjectInput> {
       // drops multipart text fields while uploading a document.
       mentorId: textField(form.get("mentorId")) ?? fallback.get("mentorId") ?? undefined,
       title: textField(form.get("title")) ?? fallback.get("title") ?? undefined,
-      notes: textField(form.get("notes")), demo: textField(form.get("demo")),
+      notes: textField(form.get("notes")), focus: textField(form.get("focus")), demo: textField(form.get("demo")),
       // Do not use `instanceof File`: Node runtimes do not consistently expose
       // the browser File constructor, even though formData() provides file-like values.
       files: form.getAll("files").filter(isUploadedFile),
@@ -44,17 +44,21 @@ export async function POST(request: Request) {
     if (typeof body.mentorId !== "string" || !body.mentorId.trim()) return NextResponse.json({ error: "Your mentor session could not be initialized. Refresh the page and try again." }, { status: 400 });
     if (!isDemo && (typeof body.title !== "string" || !body.title.trim() || body.title.length > 120)) return NextResponse.json({ error: "Add a subject title (up to 120 characters) to continue." }, { status: 400 });
     if (body.notes !== undefined && typeof body.notes !== "string") return NextResponse.json({ error: "Your study notes could not be read. Please try again." }, { status: 400 });
+    if (body.focus !== undefined && typeof body.focus !== "string") return NextResponse.json({ error: "Your learning focus could not be read. Please try again." }, { status: 400 });
     if (typeof body.notes === "string" && body.notes.length > 12_000) return NextResponse.json({ error: "Study notes must be 12,000 characters or shorter." }, { status: 400 });
+    if (typeof body.focus === "string" && body.focus.length > 600) return NextResponse.json({ error: "Your learning focus must be 600 characters or shorter." }, { status: 400 });
+    if (!isDemo && body.files.length > 0 && (typeof body.focus !== "string" || !body.focus.trim())) return NextResponse.json({ error: "Describe what your new hire should learn from the documents." }, { status: 400 });
 
     const mentorId = body.mentorId as string;
     const providedTitle = typeof body.title === "string" ? body.title.trim() : "";
     const mentor = await prisma.mentor.upsert({ where: { id: mentorId }, update: {}, create: { id: mentorId } });
     const title = isDemo ? "Project Management Fundamentals" : providedTitle;
     const imported = isDemo ? { text: "", sources: [] as ImportedSource[] } : await extractSourceDocuments(body.files);
-    const sourceNotes = [typeof body.notes === "string" ? body.notes.trim() : "", imported.text].filter(Boolean).join("\n\n");
+    const learningFocus = typeof body.focus === "string" ? body.focus.trim() : "";
+    const sourceNotes = [learningFocus ? `LEARNING FOCUS: ${learningFocus}` : "", typeof body.notes === "string" ? body.notes.trim() : "", imported.text].filter(Boolean).join("\n\n");
     const trapMap = isDemo ? demoTrapMap as TrapMap : await callJson<TrapMap>(
       trapMapSystemPrompt,
-      `SUBJECT TITLE: ${title}\n\nSTUDY NOTES AND DOCUMENT EXCERPTS:\n${sourceNotes || "No notes provided."}`,
+      `SUBJECT TITLE: ${title}\n\nLEARNING OBJECTIVE (highest priority):\n${learningFocus || "Create a practical introduction to the subject."}\n\nSTUDY NOTES AND DOCUMENT EXCERPTS:\n${sourceNotes || "No notes provided."}`,
       trapMapSchemaHint,
     );
     assertTrapMap(trapMap);
