@@ -28,6 +28,8 @@ model Subject {
   hire         Hire?
   sessions     LearningSession[]
   learnerState ConceptState[]
+
+  @@index([mentorId, createdAt])
 }
 
 model Hire {
@@ -62,6 +64,8 @@ model LearningSession {
   mentorFeedback String?
   feedbackDue Boolean @default(false)
   messages  Message[]
+
+  @@index([subjectId, startedAt])
 }
 
 model Message {
@@ -73,6 +77,8 @@ model Message {
   conceptId String?
   verdict   Json?
   createdAt DateTime        @default(now())
+
+  @@index([sessionId, createdAt])
 }
 
 model ConceptState {
