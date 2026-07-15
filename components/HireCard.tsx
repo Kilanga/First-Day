@@ -29,6 +29,8 @@ export default function HireCard({ hire, xpFloat, compact = false }: Props) {
   const target = nextTierXp(hire.tier);
   const start = tierStartXp(hire.tier);
   const progress = hire.tier === "confirmed" ? 100 : Math.min(100, ((hire.xp - start) / (target - start)) * 100);
+  const nextTier = hire.tier === "week1" ? "First Month" : hire.tier === "month1" ? "Confirmed" : null;
+  const remaining = Math.max(0, target - hire.xp);
 
   if (compact) {
     return (
@@ -52,6 +54,8 @@ export default function HireCard({ hire, xpFloat, compact = false }: Props) {
       <section className="mt-7">
         <div className="mb-2 flex justify-between text-sm"><span className="font-medium text-slate-700">Growth</span><span className="text-slate-500">{hire.xp} XP{hire.tier === "confirmed" ? "" : ` / ${target}`}</span></div>
         <div className="h-2.5 overflow-hidden rounded-full bg-indigo-100"><div className="h-full rounded-full bg-indigo-600 transition-all duration-700 ease-out" style={{ width: `${progress}%` }} /></div>
+        <p className="mt-2 text-xs text-slate-500">{nextTier ? `${remaining} XP until ${nextTier}` : "Confirmed colleague"}</p>
+        <p className="mt-1 text-xs text-slate-400">Week 1: 0–50 · First Month: 51–150 · Confirmed: 151+</p>
       </section>
       <section className="mt-8 space-y-4">
         {Object.entries(hire.stats).map(([key, value]) => <div key={key}>

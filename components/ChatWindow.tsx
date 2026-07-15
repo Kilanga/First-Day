@@ -1,9 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import type { HireView } from "./HireCard";
 
-export type ChatMessage = { id: string; role: "mentor" | "hire"; content: string };
+export type ChatMessage = { id: string; role: "mentor" | "hire"; content: string; feedback?: { impact: number; xp: number; summary: string; nextStep?: string } };
 type Props = {
   subjectId?: string;
   mentorId?: string;
@@ -14,17 +14,32 @@ type Props = {
   onHireUpdate: (hire: HireView, xpDelta: number, tierUp: boolean, sessionId: string) => void;
 };
 
+function feedbackFromResponse(data: { verdict: { scores: { accuracy: number; completeness: number; clarity: number; example: number }; missing_piece: string }; xpDelta: number }) {
+  const scores = data.verdict.scores;
+  const impact = Math.round(((scores.accuracy + scores.completeness + scores.clarity + scores.example) / 11) * 10);
+  const summary = impact >= 8 ? "Your explanation gave your hire a strong foundation." : impact >= 5 ? "Your hire has the main idea, with one useful point to reinforce." : "This topic needs another clear pass together.";
+  return { impact, xp: data.xpDelta, summary, nextStep: data.verdict.missing_piece ? `Next time, make sure to explain: ${data.verdict.missing_piece}` : undefined };
+}
+
 export default function ChatWindow({ subjectId, mentorId, hire, initialQuestion, initialSessionId, initialMessages, onHireUpdate }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialQuestion ? [{ id: "first-question", role: "hire", content: initialQuestion }] : []);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [error, setError] = useState<string>();
+  const subjectRef = useRef(subjectId);
 
   useEffect(() => {
-    setSessionId(initialSessionId);
-    if (initialMessages?.length) setMessages(initialMessages);
-    else setMessages(initialQuestion ? [{ id: "first-question", role: "hire", content: initialQuestion }] : []);
+    if (subjectRef.current !== subjectId) {
+      subjectRef.current = subjectId;
+      setSessionId(initialSessionId);
+      setMessages(initialMessages?.length ? initialMessages : initialQuestion ? [{ id: "first-question", role: "hire", content: initialQuestion }] : []);
+      return;
+    }
+    if (initialMessages?.length) {
+      setMessages((current) => current.length <= 1 ? initialMessages : current);
+      setSessionId((current) => current ?? initialSessionId);
+    }
   }, [subjectId, initialSessionId, initialMessages, initialQuestion]);
 
   async function send(event: FormEvent) {
@@ -39,7 +54,7 @@ export default function ChatWindow({ subjectId, mentorId, hire, initialQuestion,
       const data = await response.json();
       if (!response.ok) throw new Error(response.status === 429 ? "The office is closed for today — come back tomorrow." : data.error ?? "Unable to send the message.");
       setSessionId(data.sessionId);
-      setMessages((current) => [...current, { id: crypto.randomUUID(), role: "hire", content: data.hireReply }]);
+      setMessages((current) => [...current, { id: crypto.randomUUID(), role: "hire", content: data.hireReply, feedback: feedbackFromResponse(data) }]);
       onHireUpdate(data.hire, data.xpDelta, data.tierUp, data.sessionId);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to send the message.");
@@ -51,9 +66,12 @@ export default function ChatWindow({ subjectId, mentorId, hire, initialQuestion,
     <div className="border-b border-slate-100 px-6 py-5"><p className="text-sm font-medium text-slate-500">Mentor conversation</p><p className="mt-1 text-xs text-slate-400">Explain in your own words. Your colleague will ask the next question.</p></div>
     <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
       {messages.length === 0 ? <p className="pt-20 text-center text-sm text-slate-400">Your new hire is ready when you are.</p> : null}
-      {messages.map((message) => <div key={message.id} className={`flex gap-3 ${message.role === "mentor" ? "justify-end" : "justify-start"}`}>
+      {messages.map((message) => <div key={message.id} className="space-y-2">
+        <div className={`flex gap-3 ${message.role === "mentor" ? "justify-end" : "justify-start"}`}>
         {message.role === "hire" ? <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div> : null}
         <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${message.role === "mentor" ? "rounded-br-md bg-indigo-600 text-white" : "rounded-bl-md bg-slate-100 text-slate-700"}`}>{message.content}</div>
+        </div>
+        {message.feedback ? <div className="ml-11 max-w-[80%] rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3"><div className="flex items-center justify-between gap-3"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-700">Teaching feedback</p><span className="text-xs font-bold text-indigo-700">{message.feedback.impact}/10 · +{message.feedback.xp} XP</span></div><p className="mt-1 text-sm text-slate-700">{message.feedback.summary}</p>{message.feedback.nextStep ? <p className="mt-2 text-xs leading-5 text-indigo-800">{message.feedback.nextStep}</p> : null}</div> : null}
       </div>)}
       {thinking ? <div className="flex items-center gap-3"><div className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div><div className="rounded-2xl rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-500"><span className="typing-dot">●</span><span className="typing-dot">●</span><span className="typing-dot">●</span> {hire.name} is thinking…</div></div> : null}
     </div>

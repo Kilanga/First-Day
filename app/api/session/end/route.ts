@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     });
     if (!session?.subject.hire) return NextResponse.json({ error: "Session not found." }, { status: 404 });
     const cachedReport = storedReport(session.gapReport);
-    if (session.endedAt && cachedReport) return NextResponse.json({ sessionId: session.id, report: cachedReport });
+    if (session.endedAt && cachedReport) return NextResponse.json({ sessionId: session.id, report: cachedReport, snapshotMessageCount: session.reportMessageCount, snapshotAt: session.reportSnapshotAt });
 
     let report = cachedReport;
     if (!report) {
@@ -62,8 +62,8 @@ export async function POST(request: Request) {
       assertGapReport(report);
     }
     if (preview) {
-      await prisma.learningSession.update({ where: { id: session.id }, data: { gapReport: report as unknown as Prisma.InputJsonValue } });
-      return NextResponse.json({ sessionId: session.id, report });
+      const updated = await prisma.learningSession.update({ where: { id: session.id }, data: cachedReport ? {} : { gapReport: report as unknown as Prisma.InputJsonValue, reportSnapshotAt: new Date(), reportMessageCount: session.messages.length } });
+      return NextResponse.json({ sessionId: session.id, report, snapshotMessageCount: updated.reportMessageCount ?? session.messages.length, snapshotAt: updated.reportSnapshotAt });
     }
 
     const memory = (await callText(
@@ -73,10 +73,10 @@ export async function POST(request: Request) {
     const existingMemories = Array.isArray(session.subject.hire.memories) ? session.subject.hire.memories.filter((item): item is string => typeof item === "string") : [];
 
     await prisma.$transaction([
-      prisma.learningSession.update({ where: { id: session.id }, data: { endedAt: new Date(), gapReport: report as unknown as Prisma.InputJsonValue } }),
+      prisma.learningSession.update({ where: { id: session.id }, data: { endedAt: new Date(), gapReport: report as unknown as Prisma.InputJsonValue, reportSnapshotAt: session.reportSnapshotAt ?? new Date(), reportMessageCount: session.reportMessageCount ?? session.messages.length } }),
       prisma.hire.update({ where: { id: session.subject.hire.id }, data: { memories: [...existingMemories, memory].slice(-10) as unknown as Prisma.InputJsonValue } }),
     ]);
-    return NextResponse.json({ sessionId: session.id, report });
+    return NextResponse.json({ sessionId: session.id, report, snapshotMessageCount: session.reportMessageCount ?? session.messages.length, snapshotAt: session.reportSnapshotAt });
   } catch (error) {
     console.error("Session end failed", error);
     return NextResponse.json({ error: "Unable to end this session." }, { status: 502 });

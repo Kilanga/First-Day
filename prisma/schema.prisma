@@ -51,6 +51,8 @@ model LearningSession {
   startedAt DateTime  @default(now())
   endedAt   DateTime?
   gapReport Json?
+  reportSnapshotAt DateTime?
+  reportMessageCount Int?
   messages  Message[]
 }
 

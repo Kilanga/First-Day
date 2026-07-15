@@ -24,6 +24,8 @@ export default function OfficeWorkspace({ subjectId, mentorId, title, name, init
   const [report, setReport] = useState<Report>();
   const [reportOpen, setReportOpen] = useState(false);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [snapshotCount, setSnapshotCount] = useState<number>();
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
   useEffect(() => {
     if (!mentorId) return;
@@ -69,7 +71,7 @@ export default function OfficeWorkspace({ subjectId, mentorId, title, name, init
       const response = await fetch("/api/session/end", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId, preview: true }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Unable to prepare the report.");
-      setReport(data.report); setReportOpen(true);
+      setReport(data.report); setSnapshotCount(data.snapshotMessageCount); setReportOpen(true);
     } finally { setLoadingReport(false); }
   }
 
