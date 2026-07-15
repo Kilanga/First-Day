@@ -60,7 +60,13 @@ export default function OnboardingForm() {
       files.forEach((file) => payload.append("files", file));
       const query = new URLSearchParams({ mentorId: id, title });
       const response = await fetch(`/api/subjects?${query}`, { method: "POST", body: payload });
-      const data = await response.json();
+      const raw = await response.text();
+      let data: CreatedSubject & { error?: string };
+      try {
+        data = JSON.parse(raw) as CreatedSubject & { error?: string };
+      } catch {
+        throw new Error("The document service is temporarily unavailable. Please try again.");
+      }
       if (!response.ok) throw new Error(data.error ?? "Unable to create your subject.");
       setCreated(data);
     } catch (caught) {
