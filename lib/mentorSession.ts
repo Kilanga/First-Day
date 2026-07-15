@@ -11,6 +11,11 @@ function secret() {
   return value;
 }
 
+/** Fail before a write route changes data when private-session signing is unavailable. */
+export function assertMentorSessionConfigured() {
+  secret();
+}
+
 function signature(payload: string) {
   return createHmac("sha256", secret()).update(payload).digest("base64url");
 }

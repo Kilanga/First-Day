@@ -4,7 +4,7 @@ import { extractSourceDocuments, type ImportedSource } from "@/lib/documentText"
 import { orderedConcepts, type TrapMap } from "@/lib/prompts/trapmap";
 import { prisma } from "@/lib/prisma";
 import demoTrapMap from "@/public/demo/pm-fundamentals.json";
-import { issueMentorSession, requireMentorId, resolveMentorId } from "@/lib/mentorSession";
+import { assertMentorSessionConfigured, issueMentorSession, requireMentorId, resolveMentorId } from "@/lib/mentorSession";
 import { consumeAiActionQuota, consumeIpQuota } from "@/lib/ratelimit";
 import { logOperationalEvent } from "@/lib/telemetry";
 import { startSubjectGeneration } from "@/lib/subjectGeneration";
@@ -49,6 +49,7 @@ export async function POST(request: Request) {
     const body = await readInput(request);
     const isDemo = body.demo === true || body.demo === "true";
     const mentorSession = resolveMentorId(request, body.mentorId);
+    assertMentorSessionConfigured();
     if (!isDemo && (typeof body.title !== "string" || !body.title.trim() || body.title.length > 120)) return NextResponse.json({ error: "Add a subject title (up to 120 characters) to continue." }, { status: 400 });
     if (body.notes !== undefined && typeof body.notes !== "string") return NextResponse.json({ error: "Your study notes could not be read. Please try again." }, { status: 400 });
     if (body.focus !== undefined && typeof body.focus !== "string") return NextResponse.json({ error: "Your learning focus could not be read. Please try again." }, { status: 400 });
@@ -93,7 +94,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Subject creation failed", error);
     logOperationalEvent("subject.failed", { durationMs: Date.now() - startedAt });
-    const message = error instanceof Error && /document|supported|larger|read any text|couldn't read|Add up to/i.test(error.message) ? error.message
+    const message = error instanceof Error && /MENTOR_SESSION_SECRET/i.test(error.message) ? "Private learning sessions are unavailable right now. Please return to your learning desk and try again."
+      : error instanceof Error && /document|supported|larger|read any text|couldn't read|Add up to/i.test(error.message) ? error.message
       : error instanceof Error && /timed out|timeout/i.test(error.message) ? "Creating this study path took longer than expected. Please try again."
         : "Unable to create this subject.";
     return NextResponse.json({ error: message }, { status: 502 });
