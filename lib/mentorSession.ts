@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import type { NextResponse } from "next/server";
 
 export const MENTOR_SESSION_COOKIE = "first-day-mentor-session";
@@ -6,9 +6,16 @@ const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function secret() {
-  const value = process.env.MENTOR_SESSION_SECRET;
-  if (!value || value.length < 32) throw new Error("MENTOR_SESSION_SECRET must be configured with at least 32 characters.");
-  return value;
+  const configured = process.env.MENTOR_SESSION_SECRET?.trim();
+  if (configured && configured.length >= 32) return configured;
+
+  // The OpenAI key is already required for every production learning flow. A
+  // derived fallback keeps cookies signed if a deployment has not injected the
+  // dedicated secret yet; it never exposes the API key and rotating it expires
+  // existing sessions. MENTOR_SESSION_SECRET remains the preferred key.
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (apiKey && apiKey.length >= 32) return createHash("sha256").update(apiKey).digest("base64url");
+  throw new Error("A private-session signing secret is not configured.");
 }
 
 /** Fail before a write route changes data when private-session signing is unavailable. */

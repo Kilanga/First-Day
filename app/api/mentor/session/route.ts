@@ -9,7 +9,8 @@ export async function POST(request: Request) {
     return issueMentorSession(NextResponse.json({ ready: true }), resolved.mentorId);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to open a private learning desk.";
-    return NextResponse.json({ error: message }, { status: 401 });
+    const status = /private-session signing secret/i.test(message) ? 500 : 401;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 

@@ -94,7 +94,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Subject creation failed", error);
     logOperationalEvent("subject.failed", { durationMs: Date.now() - startedAt });
-    const message = error instanceof Error && /MENTOR_SESSION_SECRET/i.test(error.message) ? "Private learning sessions are unavailable right now. Please return to your learning desk and try again."
+    const message = error instanceof Error && /private-session signing secret/i.test(error.message) ? "Private learning sessions are unavailable right now. Please return to your learning desk and try again."
       : error instanceof Error && /document|supported|larger|read any text|couldn't read|Add up to/i.test(error.message) ? error.message
       : error instanceof Error && /timed out|timeout/i.test(error.message) ? "Creating this study path took longer than expected. Please try again."
         : "Unable to create this subject.";
