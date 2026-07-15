@@ -22,6 +22,11 @@ model Subject {
   sourceNotes  String?
   sourceFiles  Json?
   trapMap      Json
+  generationStatus     String @default("ready")
+  generationResponseId String?
+  generationInput      Json?
+  generationAttempts   Int    @default(0)
+  generationError      String?
   shareCode    String?           @unique
   shareEnabled Boolean           @default(false)
   createdAt    DateTime          @default(now())

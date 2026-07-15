@@ -65,6 +65,30 @@ export async function callJson<T>(system: string, user: string, schemaHint: stri
 /** Subject mapping is a larger one-off response, so it may take longer than chat. */
 export const subjectCreationTimeoutMs = SUBJECT_CREATION_TIMEOUT_MS;
 
+export type BackgroundJsonResponse = { id: string; status: string; outputText: string; error?: string };
+
+/** Starts a durable Responses API job. Poll it with getBackgroundJsonResponse. */
+export async function startBackgroundJson(system: string, user: string, schemaHint: string) {
+  const response = await getClient().responses.create({
+    model: MODEL,
+    background: true,
+    instructions: `${system}\n\nReturn one valid JSON object only. Schema guidance: ${schemaHint}`,
+    input: user,
+    text: { format: { type: "json_object" } },
+  }, { timeout: 15_000 });
+  return { id: response.id, status: response.status ?? "queued" };
+}
+
+export async function getBackgroundJsonResponse(responseId: string): Promise<BackgroundJsonResponse> {
+  const response = await getClient().responses.retrieve(responseId, undefined, { timeout: 15_000 });
+  return {
+    id: response.id,
+    status: response.status ?? "failed",
+    outputText: response.output_text,
+    error: response.error?.message,
+  };
+}
+
 export type ConversationMessage = { role: "user" | "assistant"; content: string };
 
 /** Calls OpenAI for the new hire's plain-text conversational response. */

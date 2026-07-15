@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { callJson, subjectCreationTimeoutMs } from "@/lib/openai";
 import { extractSourceDocuments, type ImportedSource } from "@/lib/documentText";
-import { assertTrapMap, orderedConcepts, trapMapSchemaHint, trapMapSystemPrompt, type TrapMap } from "@/lib/prompts/trapmap";
+import { orderedConcepts, type TrapMap } from "@/lib/prompts/trapmap";
 import { prisma } from "@/lib/prisma";
 import demoTrapMap from "@/public/demo/pm-fundamentals.json";
 import { issueMentorSession, requireMentorId, resolveMentorId } from "@/lib/mentorSession";
 import { consumeAiActionQuota, consumeIpQuota } from "@/lib/ratelimit";
 import { logOperationalEvent } from "@/lib/telemetry";
+import { startSubjectGeneration } from "@/lib/subjectGeneration";
 
 export const runtime = "nodejs";
 
@@ -67,29 +67,27 @@ export async function POST(request: Request) {
     const learningFocus = typeof body.focus === "string" ? body.focus.trim() : "";
     const promptSourceNotes = [learningFocus ? `LEARNING FOCUS: ${learningFocus}` : "", typeof body.notes === "string" ? body.notes.trim() : "", imported.text].filter(Boolean).join("\n\n");
     const retainedNotes = [learningFocus ? `LEARNING FOCUS: ${learningFocus}` : "", typeof body.notes === "string" ? body.notes.trim() : ""].filter(Boolean).join("\n\n");
-    const trapMap = isDemo ? demoTrapMap as TrapMap : await callJson<TrapMap>(
-      trapMapSystemPrompt,
-      `SUBJECT TITLE: ${title}\n\nLEARNING OBJECTIVE (highest priority):\n${learningFocus || "Create a practical introduction to the subject."}\n\nSTUDY NOTES AND DOCUMENT EXCERPTS:\n${promptSourceNotes || "No notes provided."}`,
-      trapMapSchemaHint,
-      { timeoutMs: subjectCreationTimeoutMs },
-    );
-    assertTrapMap(trapMap);
-    if (trapMap.concepts.length < 5 || trapMap.concepts.length > 8) throw new Error("The trap map must contain 5 to 8 concepts.");
-
     const personality = pickTraits();
+    const generationPrompt = `SUBJECT TITLE: ${title}\n\nLEARNING OBJECTIVE (highest priority):\n${learningFocus || "Create a practical introduction to the subject."}\n\nSTUDY NOTES AND DOCUMENT EXCERPTS:\n${promptSourceNotes || "No notes provided."}`;
+    const trapMap = isDemo ? demoTrapMap as TrapMap : undefined;
     const subject = await prisma.subject.create({
       data: {
         mentorId: mentor.id, title, sourceNotes: retainedNotes || null,
         sourceFiles: imported.sources.length ? imported.sources.map(({ type, characters }) => ({ type, characters })) as unknown as Prisma.InputJsonValue : undefined,
-        trapMap: trapMap as unknown as Prisma.InputJsonValue,
-        learnerState: { create: trapMap.concepts.map((concept) => ({ conceptId: concept.id, status: "not_covered" })) },
+        trapMap: (trapMap ?? {}) as unknown as Prisma.InputJsonValue,
+        generationStatus: isDemo ? "ready" : "preparing",
+        ...(trapMap ? { learnerState: { create: trapMap.concepts.map((concept) => ({ conceptId: concept.id, status: "not_covered" })) } } : {}),
         hire: { create: { mentorId: mentor.id, name: NAMES[Math.floor(Math.random() * NAMES.length)], personality: personality as unknown as Prisma.InputJsonValue } },
       },
       include: { hire: true },
     });
-    const firstQuestion = orderedConcepts(trapMap)[0]?.misconceptions[0]?.naive_question;
-    if (!subject.hire || !firstQuestion) throw new Error("The trap map has no initial question.");
-    const response = NextResponse.json({ subjectId: subject.id, hire: { name: subject.hire.name, tier: subject.hire.tier, xp: subject.hire.xp, stats: { comprehension: subject.hire.statComprehension, autonomy: subject.hire.statAutonomy, reflexes: subject.hire.statReflexes, confidence: subject.hire.statConfidence }, personality }, firstQuestion });
+    if (!isDemo) {
+      try { await startSubjectGeneration(subject.id, generationPrompt); }
+      catch { await prisma.subject.update({ where: { id: subject.id }, data: { generationStatus: "failed", generationError: "We could not start preparing this study path. Try again." } }); }
+    }
+    const firstQuestion = trapMap ? orderedConcepts(trapMap)[0]?.misconceptions[0]?.naive_question : undefined;
+    if (!subject.hire) throw new Error("The study partner could not be created.");
+    const response = NextResponse.json({ subjectId: subject.id, status: isDemo ? "ready" : "preparing", hire: { name: subject.hire.name, tier: subject.hire.tier, xp: subject.hire.xp, stats: { comprehension: subject.hire.statComprehension, autonomy: subject.hire.statAutonomy, reflexes: subject.hire.statReflexes, confidence: subject.hire.statConfidence }, personality }, firstQuestion });
     logOperationalEvent("subject.created", { durationMs: Date.now() - startedAt, demo: isDemo });
     return mentorSession.shouldIssueCookie ? issueMentorSession(response, mentorId) : response;
   } catch (error) {

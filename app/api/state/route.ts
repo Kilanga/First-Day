@@ -33,7 +33,9 @@ export async function GET(request: Request) {
       id: subject.id,
       title: subject.title,
       shareEnabled: subject.shareEnabled,
-      firstQuestion: nextQuestion(subject.trapMap as unknown as TrapMap, subject.learnerState),
+      generationStatus: subject.generationStatus,
+      generationError: subject.generationError,
+      firstQuestion: subject.generationStatus === "ready" ? nextQuestion(subject.trapMap as unknown as TrapMap, subject.learnerState) : undefined,
       hire: {
         name: subject.hire!.name,
         tier: subject.hire!.tier,
@@ -46,7 +48,7 @@ export async function GET(request: Request) {
         toRevisit: subject.learnerState.filter((state) => state.status === "weak" || state.status === "partial").length,
         total: subject.learnerState.length,
       },
-      concepts: orderedConcepts(subject.trapMap as unknown as TrapMap).map((concept) => {
+      concepts: (subject.generationStatus === "ready" ? orderedConcepts(subject.trapMap as unknown as TrapMap) : []).map((concept) => {
         const state = subject.learnerState.find((item) => item.conceptId === concept.id);
         const notebook = state?.notebookEntry as { text?: unknown } | null;
         const masteredAt = typeof (notebook as { createdAt?: unknown } | null)?.createdAt === "string" ? (notebook as { createdAt: string }).createdAt : undefined;
