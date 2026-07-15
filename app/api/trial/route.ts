@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const { subjectId } = await request.json();
     const mentorId = requireMentorId(request);
     if (typeof subjectId !== "string") return NextResponse.json({ error: "subjectId is required." }, { status: 400 });
-    if (!(await consumeAiActionQuota(mentorId, "trial"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
+    if (!(await consumeAiActionQuota(mentorId, "trial"))) return NextResponse.json({ error: "The study room is closed for today — come back tomorrow." }, { status: 429 });
     const subject = await prisma.subject.findFirst({ where: { id: subjectId, mentorId }, include: { hire: true, learnerState: true } });
     if (!subject?.hire) return NextResponse.json({ error: "Subject not found." }, { status: 404 });
 
