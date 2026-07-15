@@ -31,7 +31,8 @@ Rules:
 - Generate 5 to 8 concepts maximum (one session's worth).
 - Each concept must have a short slug id, a name, a 1-2 sentence core_idea, 2-4 misconceptions, and depends_on concept ids.
 - Misconceptions must be REAL documented novice errors in this domain, not strawmen. Prefer errors with practical consequences.
-- naive_question must sound like a polite, slightly hesitant, concrete junior employee. Never make it quiz-like. Write it in English.
+- All string values in the returned JSON (subject, concept names, core ideas, misconceptions, and questions) must be in English, even if the subject title or source notes are in another language.
+- naive_question must sound like a polite, slightly hesitant, concrete junior employee. Never make it quiz-like.
 - If user notes are provided, anchor concepts to their vocabulary and examples, and flag any gap between the notes and standard doctrine as an extra misconception.`;
 
 export function orderedConcepts(trapMap: TrapMap): TrapConcept[] {

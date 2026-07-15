@@ -7,12 +7,14 @@ type GapReport = {
   strengths: string[];
   gaps: Array<{ concept: string; whatWasMissing: string; tryNextTime: string }>;
   suggestedNextSession: string;
+  language?: "English";
 };
 
 const gapReportSchemaHint = `{
   "strengths": ["string"],
   "gaps": [{ "concept": "string", "whatWasMissing": "string", "tryNextTime": "string" }],
-  "suggestedNextSession": "string"
+  "suggestedNextSession": "string",
+  "language": "English"
 }`;
 
 function noteForReport(value: Prisma.JsonValue | null) {
@@ -41,7 +43,7 @@ function storedReport(value: Prisma.JsonValue | null): GapReport | null {
 
 export async function POST(request: Request) {
   try {
-    const { sessionId, preview = false } = await request.json();
+    const { sessionId, preview = false, refreshLanguage = false } = await request.json();
     if (typeof sessionId !== "string") return NextResponse.json({ error: "sessionId is required." }, { status: 400 });
     const session = await prisma.learningSession.findUnique({
       where: { id: sessionId },
@@ -49,25 +51,32 @@ export async function POST(request: Request) {
     });
     if (!session?.subject.hire) return NextResponse.json({ error: "Session not found." }, { status: 404 });
     const cachedReport = storedReport(session.gapReport);
-    if (session.endedAt && cachedReport) return NextResponse.json({ sessionId: session.id, report: cachedReport, snapshotMessageCount: session.reportMessageCount, snapshotAt: session.reportSnapshotAt });
+    if (session.endedAt && cachedReport && (!refreshLanguage || cachedReport.language === "English")) return NextResponse.json({ sessionId: session.id, report: cachedReport, snapshotMessageCount: session.reportMessageCount, snapshotAt: session.reportSnapshotAt });
 
     let report = cachedReport;
-    if (!report) {
+    if (report && refreshLanguage && report.language !== "English") {
+      report = await callJson<GapReport>(
+        "Translate this learning-session report into natural English. Preserve its meaning and JSON shape exactly. Return only JSON. Never mention scoring, verdicts, AI, or hidden evaluation.",
+        JSON.stringify(report),
+        gapReportSchemaHint,
+      );
+    } else if (!report) {
       const notes = session.messages.filter((message) => message.role === "mentor").map((message) => noteForReport(message.verdict)).filter((note): note is string => Boolean(note));
       report = await callJson<GapReport>(
-        "You compile a friendly, practical learning-session report for a mentor. Return only JSON. Focus on observable teaching strengths and actionable gaps; never mention scoring, verdicts, AI, or hidden evaluation.",
+        "You compile a friendly, practical learning-session report for a mentor. Write every string in English, even if the subject or notes are in another language. Return only JSON. Focus on observable teaching strengths and actionable gaps; never mention scoring, verdicts, AI, or hidden evaluation.",
         `SUBJECT: ${session.subject.title}\n\nEXAMINER NOTES:\n${notes.length ? notes.map((note) => `- ${note}`).join("\n") : "- No explanation attempts were recorded."}`,
         gapReportSchemaHint,
       );
-      assertGapReport(report);
     }
+    assertGapReport(report);
+    report.language = "English";
     if (preview) {
       const updated = await prisma.learningSession.update({ where: { id: session.id }, data: cachedReport ? {} : { gapReport: report as unknown as Prisma.InputJsonValue, reportSnapshotAt: new Date(), reportMessageCount: session.messages.length } });
       return NextResponse.json({ sessionId: session.id, report, snapshotMessageCount: updated.reportMessageCount ?? session.messages.length, snapshotAt: updated.reportSnapshotAt });
     }
 
     const memory = (await callText(
-      `You are ${session.subject.hire.name}, a junior employee. Write ONE warm memory from your perspective about this mentoring session. It must be first person, at most two sentences, and reference a concrete example the mentor used if there was one. Do not mention assessment, scores, XP, or AI. Return only the memory text.`,
+      `You are ${session.subject.hire.name}, a junior employee. Write ONE warm memory from your perspective about this mentoring session. It must be first person, at most two sentences, and reference a concrete example the mentor used if there was one. Write in English only, even if the conversation used another language. Do not mention assessment, scores, XP, or AI. Return only the memory text.`,
       [{ role: "user", content: session.messages.map((message) => `${message.role}: ${message.content}`).join("\n") }],
     )).trim();
     const existingMemories = Array.isArray(session.subject.hire.memories) ? session.subject.hire.memories.filter((item): item is string => typeof item === "string") : [];
