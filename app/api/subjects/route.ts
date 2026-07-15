@@ -84,7 +84,17 @@ export async function POST(request: Request) {
     });
     if (!isDemo) {
       try { await startSubjectGeneration(subject.id, generationPrompt); }
-      catch { await prisma.subject.update({ where: { id: subject.id }, data: { generationStatus: "failed", generationError: "We could not start preparing this study path. Try again." } }); await refundAiActionQuota(mentorId, "subject"); }
+      catch (error) {
+        const details = error as { name?: unknown; message?: unknown; status?: unknown; code?: unknown };
+        console.error("Subject background start failed", {
+          name: typeof details?.name === "string" ? details.name : "UnknownError",
+          message: typeof details?.message === "string" ? details.message.slice(0, 240) : "No message",
+          status: typeof details?.status === "number" ? details.status : undefined,
+          code: typeof details?.code === "string" ? details.code : undefined,
+        });
+        await prisma.subject.update({ where: { id: subject.id }, data: { generationStatus: "failed", generationError: "We could not start preparing this study path. Try again." } });
+        await refundAiActionQuota(mentorId, "subject");
+      }
     }
     const firstQuestion = trapMap ? orderedConcepts(trapMap)[0]?.misconceptions[0]?.naive_question : undefined;
     if (!subject.hire) throw new Error("The study partner could not be created.");
