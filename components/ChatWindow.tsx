@@ -21,6 +21,7 @@ export default function ChatWindow({ subjectId, hire, initialQuestion, initialSe
   const [thinkingLabel, setThinkingLabel] = useState("");
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [error, setError] = useState<string>();
+  const [lastFailedMessage, setLastFailedMessage] = useState<string>();
   const subjectRef = useRef(subjectId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -29,6 +30,8 @@ export default function ChatWindow({ subjectId, hire, initialQuestion, initialSe
       subjectRef.current = subjectId;
       setSessionId(initialSessionId);
       setMessages(initialMessages?.length ? initialMessages : initialQuestion ? [{ id: "first-question", role: "hire", content: initialQuestion }] : []);
+      setError(undefined);
+      setLastFailedMessage(undefined);
       return;
     }
     if (initialMessages?.length) {
@@ -39,12 +42,13 @@ export default function ChatWindow({ subjectId, hire, initialQuestion, initialSe
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages, thinking]);
 
-  async function send(event: FormEvent) {
-    event.preventDefault();
-    const message = draft.trim();
+  async function deliver(message: string, appendMessage: boolean) {
     if (!message || thinking) return;
-    setDraft(""); setError(""); setThinking(true); setThinkingLabel(`${hire.name} is reading your explanation…`);
-    setMessages((current) => [...current, { id: crypto.randomUUID(), role: "mentor", content: message }]);
+    setError(undefined);
+    setLastFailedMessage(undefined);
+    setThinking(true);
+    setThinkingLabel(`${hire.name} is reading your explanation…`);
+    if (appendMessage) setMessages((current) => [...current, { id: crypto.randomUUID(), role: "mentor", content: message }]);
     const reviewTimer = window.setTimeout(() => setThinkingLabel("Reviewing the important details…"), 900);
     const replyTimer = window.setTimeout(() => setThinkingLabel(`${hire.name} is preparing the next question…`), 2600);
     try {
@@ -58,24 +62,31 @@ export default function ChatWindow({ subjectId, hire, initialQuestion, initialSe
       onHireUpdate(data.hire, data.xpDelta, data.tierUp, data.sessionId, Boolean(data.breakthrough), Boolean(data.agendaComplete));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to send the message.");
-    } finally { window.clearTimeout(reviewTimer); window.clearTimeout(replyTimer); setThinking(false); }
+      setLastFailedMessage(message);
+    } finally {
+      window.clearTimeout(reviewTimer);
+      window.clearTimeout(replyTimer);
+      setThinking(false);
+    }
+  }
+
+  function send(event: FormEvent) {
+    event.preventDefault();
+    const message = draft.trim();
+    if (!message) return;
+    setDraft("");
+    void deliver(message, true);
   }
 
   const initials = hire.name.slice(0, 2).toUpperCase();
-  return <section className="flex min-h-[580px] flex-col rounded-2xl border border-indigo-100 bg-white shadow-sm">
-    <div className="border-b border-slate-100 px-6 py-5"><p className="text-sm font-medium text-slate-500">Mentor conversation</p><p className="mt-1 text-xs text-slate-400">Explain in your own words. Your colleague will ask the next question.</p></div>
-    <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+  return <section aria-label="Mentor conversation" className="flex min-h-[520px] flex-col rounded-2xl border border-indigo-100 bg-white shadow-sm">
+    <div className="border-b border-slate-100 px-5 py-5 sm:px-6"><p className="text-sm font-medium text-slate-500">Mentor conversation</p><p className="mt-1 text-xs text-slate-400">Explain in your own words. Your colleague will ask the next question.</p></div>
+    <div role="log" aria-live="polite" aria-relevant="additions text" className="flex-1 space-y-5 overflow-y-auto px-5 py-6 sm:px-6">
       {messages.length === 0 ? <p className="pt-20 text-center text-sm text-slate-400">Your new hire is ready when you are.</p> : null}
-      {messages.map((message) => <div key={message.id} className="message-in space-y-2">
-        <div className={`flex gap-3 ${message.role === "mentor" ? "justify-end" : "justify-start"}`}>
-        {message.role === "hire" ? <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div> : null}
-        <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${message.role === "mentor" ? "rounded-br-md bg-indigo-600 text-white" : "rounded-bl-md bg-slate-100 text-slate-700"}`}>{message.content}</div>
-        </div>
-        {message.feedback ? <div className="ml-11 max-w-[80%] rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-700">For your next one-on-one</p><p className="mt-1 text-sm text-slate-700">{message.feedback.summary}</p>{message.feedback.nextStep ? <p className="mt-2 text-xs leading-5 text-indigo-800">{message.feedback.nextStep}</p> : null}</div> : null}
-      </div>)}
-      {thinking ? <div className="flex items-center gap-3"><div className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div><div className="rounded-2xl rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-500"><span className="typing-dot">●</span><span className="typing-dot">●</span><span className="typing-dot">●</span> {thinkingLabel}</div></div> : null}
+      {messages.map((message) => <div key={message.id} className="message-in space-y-2"><div className={`flex gap-3 ${message.role === "mentor" ? "justify-end" : "justify-start"}`}>{message.role === "hire" ? <div aria-hidden="true" className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div> : null}<div className={`max-w-[84%] rounded-2xl px-4 py-3 text-sm leading-6 sm:max-w-[80%] ${message.role === "mentor" ? "rounded-br-md bg-indigo-600 text-white" : "rounded-bl-md bg-slate-100 text-slate-700"}`}>{message.content}</div></div>{message.feedback ? <div className="ml-11 max-w-[84%] rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 sm:max-w-[80%]"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-700">For your next one-on-one</p><p className="mt-1 text-sm text-slate-700">{message.feedback.summary}</p>{message.feedback.nextStep ? <p className="mt-2 text-xs leading-5 text-indigo-800">{message.feedback.nextStep}</p> : null}</div> : null}</div>)}
+      {thinking ? <div aria-live="polite" className="flex items-center gap-3"><div aria-hidden="true" className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div><div className="rounded-2xl rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-500"><span className="typing-dot">●</span><span className="typing-dot">●</span><span className="typing-dot">●</span> {thinkingLabel}</div></div> : null}
       <div ref={messagesEndRef} />
     </div>
-    <form onSubmit={send} className="border-t border-slate-100 p-4"><div className="flex gap-3"><textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === "Enter") { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} maxLength={6000} rows={2} placeholder="Explain it to your new hire…" className="min-h-[48px] flex-1 resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" /><button disabled={!draft.trim() || thinking} className="rounded-xl bg-indigo-600 px-5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40">Send</button></div><p className="mt-2 text-xs text-slate-400">Press Ctrl/⌘ + Enter to send</p>{error ? <p className="mt-2 text-xs text-rose-600">{error}</p> : null}</form>
+    <form onSubmit={send} className="border-t border-slate-100 p-4"><div className="flex gap-3"><label className="sr-only" htmlFor="mentor-explanation">Explain your answer</label><textarea id="mentor-explanation" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === "Enter") { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} maxLength={6000} rows={2} disabled={thinking} aria-describedby="mentor-explanation-help mentor-explanation-count" placeholder="Explain it to your new hire…" className="min-h-[52px] flex-1 resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50" /><button type="submit" disabled={!draft.trim() || thinking} className="rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 sm:px-5">Send</button></div><div className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-slate-400"><p id="mentor-explanation-help">Press Ctrl/⌘ + Enter to send</p><p id="mentor-explanation-count">{draft.length.toLocaleString()} / 6,000</p></div>{error ? <div role="alert" className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700"><span>{error}</span>{lastFailedMessage ? <button type="button" onClick={() => void deliver(lastFailedMessage, false)} disabled={thinking} className="font-semibold underline underline-offset-2 hover:text-rose-900 disabled:opacity-50">Try again</button> : null}</div> : null}</form>
   </section>;
 }

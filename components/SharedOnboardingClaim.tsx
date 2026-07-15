@@ -10,6 +10,7 @@ export default function SharedOnboardingClaim({ shareCode, title, hireName }: { 
   const [error, setError] = useState<string>();
 
   async function start() {
+    if (loading) return;
     setLoading(true);
     setError(undefined);
     try {
@@ -24,5 +25,5 @@ export default function SharedOnboardingClaim({ shareCode, title, hireName }: { 
     }
   }
 
-  return <div className="mt-8"><button onClick={() => void start()} disabled={loading} className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{loading ? `Preparing ${hireName}'s desk…` : `Meet ${hireName}`}</button>{error ? <p className="mt-3 text-sm text-rose-700">{error}</p> : null}</div>;
+  return <div className="mt-8 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5"><p className="text-sm font-semibold text-slate-900">Start with a clean slate</p><p className="mt-2 text-sm leading-6 text-slate-600">You&apos;ll get your own private copy of <strong>{title}</strong> with {hireName}. No messages, notes, progress, or reports from the person who shared this link will be included.</p><button onClick={() => void start()} disabled={loading} className="mt-5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">{loading ? `Preparing ${hireName}'s desk…` : `Meet ${hireName}`}</button>{error ? <div role="alert" className="mt-3 flex flex-wrap items-center gap-3 text-sm text-rose-700"><span>{error}</span><button type="button" onClick={() => void start()} className="font-semibold underline underline-offset-2">Try again</button></div> : null}</div>;
 }

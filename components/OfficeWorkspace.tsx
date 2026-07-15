@@ -24,7 +24,8 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
 
   async function refreshSubjects() {
     const response = await fetch("/api/state");
-    if (response.ok) { const data = await response.json(); setSubjects(data.subjects ?? []); }
+    if (!response.ok) return;
+    const data = await response.json(); setSubjects(data.subjects ?? []);
   }
   useEffect(() => { void refreshSubjects().catch(() => undefined); }, []);
 
@@ -32,6 +33,11 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
   const currentTitle = currentSubject?.title ?? title; const currentQuestion = currentSubject?.firstQuestion ?? initialQuestion;
   const agenda = useMemo(() => agendaIds(currentSubject?.activeSession?.agenda).map((id) => currentSubject?.concepts.find((concept) => concept.id === id)).filter((concept): concept is SkillConcept => Boolean(concept)), [currentSubject]);
   useEffect(() => { if (currentSubject) { setHire(currentSubject.hire); setSessionId(currentSubject.activeSession?.id); } }, [currentSubject]);
+  useEffect(() => {
+    function closeOnEscape(event: KeyboardEvent) { if (event.key === "Escape") { setNotebookOpen(false); setReportOpen(false); setConfirmEnd(false); } }
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, []);
 
   function updateHire(nextHire: HireView, xpDelta: number, crossedTier: boolean, nextSessionId: string, didBreakthrough: boolean, finishedAgenda: boolean) {
     setHire(nextHire); setSessionId(nextSessionId); setSubjects((current) => current.map((subject) => subject.id === subjectId ? { ...subject, hire: nextHire, activeSession: subject.activeSession ?? { id: nextSessionId, messages: [] } } : subject));
