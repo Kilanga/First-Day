@@ -12,7 +12,7 @@ import { logOperationalEvent } from "@/lib/telemetry";
 export const runtime = "nodejs";
 
 const NAMES = ["Sam", "Alex", "Jordan", "Riley", "Casey", "Morgan", "Charlie", "Taylor", "Jamie", "Quinn"];
-const TRAITS = ["always taking notes on a battered notepad", "slightly too much coffee", "worried about the probation review", "quotes their professor from time to time", "over-apologizes when confused", "gets visibly excited when something clicks", "keeps a list of 'questions I was afraid to ask'", "compares everything to their student job at a bakery"];
+const TRAITS = ["always taking notes on a battered notepad", "slightly too much coffee", "quotes a favorite teacher from time to time", "over-apologizes when confused", "gets visibly excited when something clicks", "keeps a list of 'questions I was afraid to ask'", "makes colourful revision cards", "compares everything to a film or book they loved"];
 type SubjectInput = { mentorId?: unknown; title?: unknown; notes?: unknown; focus?: unknown; demo?: unknown; files: File[] };
 const MAX_MULTIPART_BYTES = 4_500_000;
 

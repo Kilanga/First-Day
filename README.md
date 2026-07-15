@@ -1,6 +1,6 @@
 # First Day
 
-First Day is a learning app that reverses the usual AI-tutor relationship. Instead of asking an AI for answers, a mentor teaches a curious junior colleague during their first weeks on the job. The colleague asks plausible, strategically naive questions; explaining clearly is the learning exercise.
+First Day is a learning app that reverses the usual AI-tutor relationship. Instead of asking an AI for answers, a learner teaches a curious study partner. The partner asks plausible, strategically naive questions; explaining clearly is the learning exercise.
 
 The product is built around the protégé effect: people consolidate knowledge when they have to teach it. The goal is not to make the learner look clever. It is to make the mentor notice where an explanation is incomplete, vague, or missing a practical example.
 
@@ -9,8 +9,8 @@ The product is built around the protégé effect: people consolidate knowledge w
 - Creates a subject from a title and optional study notes.
 - Accepts local Markdown, text, Word, PowerPoint, and text-based PDF documentation when creating a subject. When files are attached, the mentor must state a learning focus so the generated practice stays scoped to the relevant material; only extracted text is used and files are not retained.
 - Builds a private concept and misconception map for that subject.
-- Gives the subject a named junior colleague with a small, consistent personality.
-- Runs a mentor/colleague conversation, with the colleague asking the next useful question.
+- Gives the subject a named study partner with a small, consistent personality.
+- Runs a teaching conversation, with the study partner asking the next useful question.
 - Tracks what the colleague has genuinely understood, without revealing the hidden assessment system in the conversation.
 - Turns progress into in-character artifacts: a notebook, a session agenda, breakthrough moments, a journal entry, and a skills matrix.
 - Produces an end-of-session teaching report and a short 360-style note from the colleague.

@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     }
 
     const memory = (await callText(
-      `You are ${session.subject.hire.name}, a junior employee. Write ONE warm memory from your perspective about this mentoring session. It must be first person, at most two sentences, and reference a concrete example the mentor used if there was one. Write in English only, even if the conversation used another language. Do not mention assessment, scores, XP, or AI. Return only the memory text.`,
+      `You are ${session.subject.hire.name}, a curious study partner. Write ONE warm memory from your perspective about this study session. It must be first person, at most two sentences, and reference a concrete example the mentor used if there was one. Write in English only, even if the conversation used another language. Do not mention assessment, scores, points, or AI. Return only the memory text.`,
       [{ role: "user", content: session.messages.map((message) => `${message.role}: ${message.content}`).join("\n") }],
     )).trim();
     const existingMemories = Array.isArray(session.subject.hire.memories) ? session.subject.hire.memories.filter((item): item is string => typeof item === "string") : [];
