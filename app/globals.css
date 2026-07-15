@@ -10,3 +10,5 @@ body { @apply bg-[#faf9f7] text-slate-800; }
 .typing-dot { animation: typing 1.2s infinite; display: inline-block; font-size: 9px; margin-right: 2px; }
 .typing-dot:nth-child(2) { animation-delay: .15s; }
 .typing-dot:nth-child(3) { animation-delay: .3s; }
+@keyframes message-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.message-in { animation: message-in .22s ease-out both; }

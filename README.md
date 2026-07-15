@@ -7,6 +7,7 @@ The product is built around the protégé effect: people consolidate knowledge w
 ## What the product does
 
 - Creates a subject from a title and optional study notes.
+- Accepts local Markdown, text, Word, PowerPoint, and text-based PDF documentation when creating a subject; only extracted text is used and files are not retained.
 - Builds a private concept and misconception map for that subject.
 - Gives the subject a named junior colleague with a small, consistent personality.
 - Runs a mentor/colleague conversation, with the colleague asking the next useful question.
@@ -132,3 +133,4 @@ For production, Vercel runs the `build` script, which deploys Prisma migrations,
 - No streaming responses.
 - One hire per subject.
 - The public demo remains a deferred static asset while the core loop evolves.
+- No external documentation connectors in v1; company documentation is supplied locally during subject creation.

@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     const { sessionId } = await request.json();
     if (typeof sessionId !== "string") return NextResponse.json({ error: "sessionId is required." }, { status: 400 });
     const session = await prisma.learningSession.findUnique({ where: { id: sessionId }, include: { subject: { include: { hire: true } } } });
-    if (!session?.subject.hire) return NextResponse.json({ error: "Session not found." }, { status: 404 });
+    if (!session?.subject.hire || !session.endedAt) return NextResponse.json({ error: "Session not found." }, { status: 404 });
     if (session.mentorFeedback) return NextResponse.json({ feedback: session.mentorFeedback });
     const sessions = await prisma.learningSession.findMany({ where: { subjectId: session.subjectId, endedAt: { not: null } }, orderBy: { endedAt: "desc" }, take: 4, include: { messages: true } });
     const feedback = await generateMentorFeedback(session.subject.hire.name, sessions.flatMap((item) => item.messages));

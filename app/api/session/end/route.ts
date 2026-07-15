@@ -71,8 +71,10 @@ export async function POST(request: Request) {
       [{ role: "user", content: session.messages.map((message) => `${message.role}: ${message.content}`).join("\n") }],
     )).trim();
     const existingMemories = Array.isArray(session.subject.hire.memories) ? session.subject.hire.memories.filter((item): item is string => typeof item === "string") : [];
+    const completedSessionCount = await prisma.learningSession.count({ where: { subjectId: session.subjectId, endedAt: { not: null } } });
+    const feedbackDue = (completedSessionCount + 1) % 2 === 0;
     await prisma.$transaction([
-      prisma.learningSession.update({ where: { id: session.id }, data: { endedAt: new Date(), gapReport: report as unknown as Prisma.InputJsonValue, reportSnapshotAt: session.reportSnapshotAt ?? new Date(), reportMessageCount: session.reportMessageCount ?? session.messages.length, journalEntry: memory } }),
+      prisma.learningSession.update({ where: { id: session.id }, data: { endedAt: new Date(), gapReport: report as unknown as Prisma.InputJsonValue, reportSnapshotAt: session.reportSnapshotAt ?? new Date(), reportMessageCount: session.reportMessageCount ?? session.messages.length, journalEntry: memory, feedbackDue } }),
       prisma.hire.update({ where: { id: session.subject.hire.id }, data: { memories: [...existingMemories, memory].slice(-10) as unknown as Prisma.InputJsonValue } }),
     ]);
     return NextResponse.json({ sessionId: session.id, report, snapshotMessageCount: session.reportMessageCount ?? session.messages.length, snapshotAt: session.reportSnapshotAt });

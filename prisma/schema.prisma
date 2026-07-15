@@ -20,6 +20,7 @@ model Subject {
   mentor       Mentor            @relation(fields: [mentorId], references: [id])
   title        String
   sourceNotes  String?
+  sourceFiles  Json?
   trapMap      Json
   createdAt    DateTime          @default(now())
   hire         Hire?
@@ -57,6 +58,7 @@ model LearningSession {
   agendaBonusAwarded Boolean @default(false)
   journalEntry String?
   mentorFeedback String?
+  feedbackDue Boolean @default(false)
   messages  Message[]
 }
 

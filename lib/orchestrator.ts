@@ -33,6 +33,15 @@ function notebookExcerpt(reply: string) {
   return (sentences.slice(0, 2).join(" ") || reply).slice(0, 700);
 }
 
+function mentorNote(verdict: ExaminerResult) {
+  if (verdict.verdict === "n/a") return undefined;
+  const total = verdict.scores.accuracy + verdict.scores.completeness + verdict.scores.clarity + verdict.scores.example;
+  return {
+    summary: total >= 9 ? "That explanation gave your colleague a solid foundation." : total >= 6 ? "Your colleague has the main idea, with one useful point to reinforce." : "This topic would benefit from another clear pass together.",
+    nextStep: verdict.missing_piece ? `A useful point to return to: ${verdict.missing_piece}` : undefined,
+  };
+}
+
 function asTrapMap(value: Prisma.JsonValue): TrapMap {
   return value as unknown as TrapMap;
 }
@@ -151,7 +160,7 @@ export async function orchestrateChat(input: ChatInput) {
   return {
     sessionId: session.id,
     hireReply,
-    verdict,
+    teachingNote: mentorNote(verdict),
     xpDelta: xp.xpDelta + (updated.agendaComplete ? 15 : 0),
     statDeltas: xp.statDeltas,
     tierUp: updated.hire.tier !== subject.hire.tier,
