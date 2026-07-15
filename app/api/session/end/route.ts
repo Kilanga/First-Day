@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     if (!session?.subject.hire) return NextResponse.json({ error: "Session not found." }, { status: 404 });
     const cachedReport = storedReport(session.gapReport);
     if (session.endedAt && cachedReport && (!refreshLanguage || cachedReport.language === "English")) return NextResponse.json({ sessionId: session.id, report: cachedReport, snapshotMessageCount: session.reportMessageCount, snapshotAt: session.reportSnapshotAt });
-    if (!cachedReport && !(await consumeAiActionQuota(mentorId, "report"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
+    if (!cachedReport && !(await consumeAiActionQuota(mentorId, "report"))) return NextResponse.json({ error: "The study room is closed for today — come back tomorrow." }, { status: 429 });
 
     let report = cachedReport;
     if (report && refreshLanguage && report.language !== "English") {
