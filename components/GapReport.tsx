@@ -1,4 +1,6 @@
-type Report = { strengths: string[]; gaps: Array<{ concept: string; whatWasMissing: string; tryNextTime: string }>; suggestedNextSession: string };
+"use client";
+
+export type Report = { strengths: string[]; gaps: Array<{ concept: string; whatWasMissing: string; tryNextTime: string }>; suggestedNextSession: string };
 
 export default function GapReport({ report }: { report: Report }) {
   return <div className="space-y-9">

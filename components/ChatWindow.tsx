@@ -1,23 +1,31 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import type { HireView } from "./HireCard";
 
-type ChatMessage = { id: string; role: "mentor" | "hire"; content: string };
+export type ChatMessage = { id: string; role: "mentor" | "hire"; content: string };
 type Props = {
   subjectId?: string;
   mentorId?: string;
   hire: HireView;
   initialQuestion?: string;
+  initialSessionId?: string;
+  initialMessages?: ChatMessage[];
   onHireUpdate: (hire: HireView, xpDelta: number, tierUp: boolean, sessionId: string) => void;
 };
 
-export default function ChatWindow({ subjectId, mentorId, hire, initialQuestion, onHireUpdate }: Props) {
+export default function ChatWindow({ subjectId, mentorId, hire, initialQuestion, initialSessionId, initialMessages, onHireUpdate }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialQuestion ? [{ id: "first-question", role: "hire", content: initialQuestion }] : []);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
-  const [sessionId, setSessionId] = useState<string>();
+  const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    setSessionId(initialSessionId);
+    if (initialMessages?.length) setMessages(initialMessages);
+    else setMessages(initialQuestion ? [{ id: "first-question", role: "hire", content: initialQuestion }] : []);
+  }, [subjectId, initialSessionId, initialMessages, initialQuestion]);
 
   async function send(event: FormEvent) {
     event.preventDefault();

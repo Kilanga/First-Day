@@ -1,4 +1,3 @@
-import Link from "next/link";
-import DemoSubjectButton from "@/components/DemoSubjectButton";
+import Dashboard from "@/components/Dashboard";
 
-export default function LandingPage() { return <main className="min-h-screen bg-[#faf9f7] px-5 py-20 sm:px-8"><div className="mx-auto max-w-3xl text-center"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">First Day</p><h1 className="mt-5 text-4xl font-semibold tracking-tight text-slate-900 sm:text-6xl">You only truly know what you can explain to the new hire.</h1><p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">The protégé effect turns teaching into one of the fastest ways to consolidate knowledge. First Day inverts the AI tutor: you mentor a curious new colleague instead.</p><div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><DemoSubjectButton /><Link href="/onboarding" className="rounded-xl border border-indigo-200 px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50">Teach your own subject</Link></div></div></main>; }
+export default function LandingPage() { return <Dashboard />; }

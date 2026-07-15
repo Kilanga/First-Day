@@ -30,24 +30,41 @@ function assertGapReport(value: unknown): asserts value is GapReport {
   }
 }
 
+function storedReport(value: Prisma.JsonValue | null): GapReport | null {
+  try {
+    assertGapReport(value);
+    return value;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   try {
-    const { sessionId } = await request.json();
+    const { sessionId, preview = false } = await request.json();
     if (typeof sessionId !== "string") return NextResponse.json({ error: "sessionId is required." }, { status: 400 });
     const session = await prisma.learningSession.findUnique({
       where: { id: sessionId },
       include: { messages: { orderBy: { createdAt: "asc" } }, subject: { include: { hire: true } } },
     });
     if (!session?.subject.hire) return NextResponse.json({ error: "Session not found." }, { status: 404 });
-    if (session.endedAt && session.gapReport) return NextResponse.json({ sessionId: session.id });
+    const cachedReport = storedReport(session.gapReport);
+    if (session.endedAt && cachedReport) return NextResponse.json({ sessionId: session.id, report: cachedReport });
 
-    const notes = session.messages.filter((message) => message.role === "mentor").map((message) => noteForReport(message.verdict)).filter((note): note is string => Boolean(note));
-    const report = await callJson<GapReport>(
-      "You compile a friendly, practical learning-session report for a mentor. Return only JSON. Focus on observable teaching strengths and actionable gaps; never mention scoring, verdicts, AI, or hidden evaluation.",
-      `SUBJECT: ${session.subject.title}\n\nEXAMINER NOTES:\n${notes.length ? notes.map((note) => `- ${note}`).join("\n") : "- No explanation attempts were recorded."}`,
-      gapReportSchemaHint,
-    );
-    assertGapReport(report);
+    let report = cachedReport;
+    if (!report) {
+      const notes = session.messages.filter((message) => message.role === "mentor").map((message) => noteForReport(message.verdict)).filter((note): note is string => Boolean(note));
+      report = await callJson<GapReport>(
+        "You compile a friendly, practical learning-session report for a mentor. Return only JSON. Focus on observable teaching strengths and actionable gaps; never mention scoring, verdicts, AI, or hidden evaluation.",
+        `SUBJECT: ${session.subject.title}\n\nEXAMINER NOTES:\n${notes.length ? notes.map((note) => `- ${note}`).join("\n") : "- No explanation attempts were recorded."}`,
+        gapReportSchemaHint,
+      );
+      assertGapReport(report);
+    }
+    if (preview) {
+      await prisma.learningSession.update({ where: { id: session.id }, data: { gapReport: report as unknown as Prisma.InputJsonValue } });
+      return NextResponse.json({ sessionId: session.id, report });
+    }
 
     const memory = (await callText(
       `You are ${session.subject.hire.name}, a junior employee. Write ONE warm memory from your perspective about this mentoring session. It must be first person, at most two sentences, and reference a concrete example the mentor used if there was one. Do not mention assessment, scores, XP, or AI. Return only the memory text.`,
@@ -59,7 +76,7 @@ export async function POST(request: Request) {
       prisma.learningSession.update({ where: { id: session.id }, data: { endedAt: new Date(), gapReport: report as unknown as Prisma.InputJsonValue } }),
       prisma.hire.update({ where: { id: session.subject.hire.id }, data: { memories: [...existingMemories, memory].slice(-10) as unknown as Prisma.InputJsonValue } }),
     ]);
-    return NextResponse.json({ sessionId: session.id });
+    return NextResponse.json({ sessionId: session.id, report });
   } catch (error) {
     console.error("Session end failed", error);
     return NextResponse.json({ error: "Unable to end this session." }, { status: 502 });
