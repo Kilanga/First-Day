@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import mammoth from "mammoth";
-import { PDFParse } from "pdf-parse";
+import { DOMMatrix, ImageData, Path2D } from "@napi-rs/canvas";
 
 const MAX_FILES = 4;
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
@@ -28,6 +28,13 @@ async function extractPptx(buffer: Buffer) {
 }
 
 async function extractPdf(buffer: Buffer) {
+  // PDF.js tries to discover these through a dynamic require. Initialising them
+  // explicitly makes the Node/Vercel runtime deterministic and traces canvas.
+  const runtime = globalThis as Record<string, unknown>;
+  runtime.DOMMatrix ??= DOMMatrix;
+  runtime.ImageData ??= ImageData;
+  runtime.Path2D ??= Path2D;
+  const { PDFParse } = await import("pdf-parse");
   const parser = new PDFParse({ data: new Uint8Array(buffer) });
   try {
     return (await parser.getText()).text;
