@@ -67,6 +67,20 @@ export const subjectCreationTimeoutMs = SUBJECT_CREATION_TIMEOUT_MS;
 
 export type BackgroundJsonResponse = { id: string; status: string; outputText: string; error?: string };
 
+function backgroundOutputText(value: unknown) {
+  const output = (value as { output?: unknown }).output;
+  if (!Array.isArray(output)) return "";
+  for (const item of output) {
+    const content = (item as { content?: unknown }).content;
+    if (!Array.isArray(content)) continue;
+    for (const part of content) {
+      const text = (part as { type?: unknown; text?: unknown }).text;
+      if ((part as { type?: unknown }).type === "output_text" && typeof text === "string") return text;
+    }
+  }
+  return "";
+}
+
 /** Starts a durable Responses API job. Poll it with getBackgroundJsonResponse. */
 export async function startBackgroundJson(system: string, user: string, schemaHint: string) {
   const response = await getClient().responses.create({
@@ -86,7 +100,7 @@ export async function getBackgroundJsonResponse(responseId: string): Promise<Bac
   return {
     id: response.id,
     status: response.status ?? "failed",
-    outputText: response.output_text,
+    outputText: backgroundOutputText(response),
     error: response.error?.message,
   };
 }
