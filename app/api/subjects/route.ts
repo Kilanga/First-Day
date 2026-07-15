@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { callJson } from "@/lib/openai";
+import { callJson, subjectCreationTimeoutMs } from "@/lib/openai";
 import { extractSourceDocuments, type ImportedSource } from "@/lib/documentText";
 import { assertTrapMap, orderedConcepts, trapMapSchemaHint, trapMapSystemPrompt, type TrapMap } from "@/lib/prompts/trapmap";
 import { prisma } from "@/lib/prisma";
@@ -71,6 +71,7 @@ export async function POST(request: Request) {
       trapMapSystemPrompt,
       `SUBJECT TITLE: ${title}\n\nLEARNING OBJECTIVE (highest priority):\n${learningFocus || "Create a practical introduction to the subject."}\n\nSTUDY NOTES AND DOCUMENT EXCERPTS:\n${promptSourceNotes || "No notes provided."}`,
       trapMapSchemaHint,
+      { timeoutMs: subjectCreationTimeoutMs },
     );
     assertTrapMap(trapMap);
     if (trapMap.concepts.length < 5 || trapMap.concepts.length > 8) throw new Error("The trap map must contain 5 to 8 concepts.");
@@ -94,7 +95,9 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Subject creation failed", error);
     logOperationalEvent("subject.failed", { durationMs: Date.now() - startedAt });
-    const message = error instanceof Error && /document|supported|larger|read any text|couldn't read|Add up to/i.test(error.message) ? error.message : "Unable to create this subject.";
+    const message = error instanceof Error && /document|supported|larger|read any text|couldn't read|Add up to/i.test(error.message) ? error.message
+      : error instanceof Error && /timed out|timeout/i.test(error.message) ? "Creating this study path took longer than expected. Please try again."
+        : "Unable to create this subject.";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }

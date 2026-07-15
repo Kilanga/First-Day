@@ -2,10 +2,16 @@ import OpenAI from "openai";
 
 const MODEL = "gpt-5.6";
 const DEFAULT_TIMEOUT_MS = 45_000;
+const SUBJECT_CREATION_TIMEOUT_MS = 90_000;
 
 function timeoutMs() {
   const configured = Number(process.env.OPENAI_TIMEOUT_MS);
   return Number.isFinite(configured) && configured >= 5_000 && configured <= 120_000 ? configured : DEFAULT_TIMEOUT_MS;
+}
+
+function boundedTimeout(value: number | undefined) {
+  if (typeof value !== "number") return timeoutMs();
+  return Number.isFinite(value) && value >= 5_000 && value <= 120_000 ? value : timeoutMs();
 }
 
 export class OpenAIJsonError extends Error {
@@ -29,7 +35,7 @@ function readContent(content: string | null): string {
 }
 
 /** Calls OpenAI for a JSON object and retries once if the response is malformed. */
-export async function callJson<T>(system: string, user: string, schemaHint: string): Promise<T> {
+export async function callJson<T>(system: string, user: string, schemaHint: string, options?: { timeoutMs?: number }): Promise<T> {
   const client = getClient();
   let lastError: unknown;
   let retryMessage = user;
@@ -42,7 +48,7 @@ export async function callJson<T>(system: string, user: string, schemaHint: stri
         { role: "system", content: `${system}\n\nReturn one valid JSON object only. Schema guidance: ${schemaHint}` },
         { role: "user", content: retryMessage }
       ]
-    }, { timeout: timeoutMs() });
+    }, { timeout: boundedTimeout(options?.timeoutMs) });
 
     const content = readContent(completion.choices[0]?.message.content ?? null);
     try {
@@ -55,6 +61,9 @@ export async function callJson<T>(system: string, user: string, schemaHint: stri
 
   throw new OpenAIJsonError("OpenAI returned malformed JSON after one retry.", lastError);
 }
+
+/** Subject mapping is a larger one-off response, so it may take longer than chat. */
+export const subjectCreationTimeoutMs = SUBJECT_CREATION_TIMEOUT_MS;
 
 export type ConversationMessage = { role: "user" | "assistant"; content: string };
 
