@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const candidates = trapMap.concepts.filter((concept) => stateById.has(concept.id)).sort(() => Math.random() - 0.5).slice(0, Math.min(5, states.length));
 
     const questions = await callJson<TrialQuestion[]>(
-      "You create a short workplace learning trial. Return a JSON object with a questions array. Write 3-5 concise, practical questions that ask the learner to explain or apply each supplied concept. Never mention evaluation, trap maps, or hidden learning states.",
+      "You create a short educational knowledge check. Return a JSON object with a questions array. Write 3-5 concise questions that ask the learner to explain or apply each supplied concept. Never mention evaluation, trap maps, or hidden learning states.",
       JSON.stringify({ concepts: candidates.map((concept) => ({ id: concept.id, name: concept.name, core_idea: concept.core_idea })) }),
       '{ "questions": [{ "conceptId": "string", "concept": "string", "question": "string" }] }',
     ).then((value) => (value as unknown as { questions: TrialQuestion[] }).questions);
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
     const personality = Array.isArray(subject.hire.personality) ? subject.hire.personality.filter((item): item is string => typeof item === "string").join("; ") : "thoughtful and eager";
     const answerResult = await callJson<{ answers: TrialAnswer[] }>(
-      `You are ${subject.hire.name}, a junior employee. Answer the supplied questions in character: motivated, polite, and a little nervous. Personality: ${personality}. Return only JSON. For a mastered concept, answer correctly and concretely. For a partial concept, give a partly correct but incomplete answer. For a weak concept, visibly struggle or give a plausible wrong answer. Never mention tests, scores, concepts statuses, evaluation, or AI.`,
+      `You are ${subject.hire.name}, a curious study partner. Answer the supplied questions in character: motivated, polite, and a little hesitant when an idea is new. Personality: ${personality}. Return only JSON. For a mastered concept, answer correctly and concretely. For a partial concept, give a partly correct but incomplete answer. For a weak concept, visibly struggle or give a plausible wrong answer. Never mention tests, scores, concept statuses, evaluation, or AI.`,
       JSON.stringify({ questions, hiddenStatuses: questions.map((question) => ({ conceptId: question.conceptId, status: stateById.get(question.conceptId) })) }),
       '{ "answers": [{ "conceptId": "string", "answer": "string" }] }',
     );
