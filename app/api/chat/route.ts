@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { orchestrateChat } from "@/lib/orchestrator";
 import { consumeMessageQuota, refundMessageQuota } from "@/lib/ratelimit";
 import { requireMentorId } from "@/lib/mentorSession";
+import { logOperationalEvent } from "@/lib/telemetry";
 
 export async function POST(request: Request) {
   let chargedMentorId: string | undefined;
+  const startedAt = Date.now();
   try {
     const body = await request.json();
     if (!body || typeof body.subjectId !== "string" ||
@@ -16,12 +18,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
     }
     chargedMentorId = mentorId;
-    return NextResponse.json(await orchestrateChat({ ...body, mentorId }));
+    const result = await orchestrateChat({ ...body, mentorId });
+    logOperationalEvent("chat.completed", { durationMs: Date.now() - startedAt, status: 200 });
+    return NextResponse.json(result);
   } catch (error) {
     if (chargedMentorId) await refundMessageQuota(chargedMentorId).catch(() => undefined);
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Chat request failed", { message });
     const temporarilyUnavailable = /quota|rate limit|insufficient_quota/i.test(message);
+    logOperationalEvent("chat.failed", { durationMs: Date.now() - startedAt, status: temporarilyUnavailable ? 503 : 502, temporarilyUnavailable });
     return NextResponse.json({
       error: temporarilyUnavailable
         ? "The office is temporarily unavailable. Please try again in a little while."

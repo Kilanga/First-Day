@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import GapReport from "@/components/GapReport";
 import MentorFeedback from "@/components/MentorFeedback";
 import ReportLanguageGuard from "@/components/ReportLanguageGuard";
+import ReportExportButton from "@/components/ReportExportButton";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { getMentorIdFromCookieHeader, MENTOR_SESSION_COOKIE } from "@/lib/mentorSession";
@@ -56,6 +57,7 @@ export default async function ReportPage({ params }: { params: Promise<{ session
         <div className="mt-10">{report ? <GapReport report={report} /> : <p className="rounded-2xl bg-white p-6 text-slate-600 shadow-sm">Your session report is being prepared.</p>}</div>
         <div className="mt-10 flex flex-wrap gap-3">
           <Link href={followUp} className="inline-flex rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white">Start a follow-up session</Link>
+          {report ? <ReportExportButton sessionId={session.id} /> : null}
           <Link href="/" className="inline-flex rounded-xl border border-indigo-200 px-5 py-3 text-sm font-semibold text-indigo-700">Back to home</Link>
         </div>
       </div>

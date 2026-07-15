@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import demoTrapMap from "@/public/demo/pm-fundamentals.json";
 import { issueMentorSession, requireMentorId, resolveMentorId } from "@/lib/mentorSession";
 import { consumeAiActionQuota, consumeIpQuota } from "@/lib/ratelimit";
+import { logOperationalEvent } from "@/lib/telemetry";
 
 export const runtime = "nodejs";
 
@@ -43,6 +44,7 @@ async function readInput(request: Request): Promise<SubjectInput> {
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   try {
     const body = await readInput(request);
     const isDemo = body.demo === true || body.demo === "true";
@@ -87,9 +89,11 @@ export async function POST(request: Request) {
     const firstQuestion = orderedConcepts(trapMap)[0]?.misconceptions[0]?.naive_question;
     if (!subject.hire || !firstQuestion) throw new Error("The trap map has no initial question.");
     const response = NextResponse.json({ subjectId: subject.id, hire: { name: subject.hire.name, tier: subject.hire.tier, xp: subject.hire.xp, stats: { comprehension: subject.hire.statComprehension, autonomy: subject.hire.statAutonomy, reflexes: subject.hire.statReflexes, confidence: subject.hire.statConfidence }, personality }, firstQuestion });
+    logOperationalEvent("subject.created", { durationMs: Date.now() - startedAt, demo: isDemo });
     return mentorSession.shouldIssueCookie ? issueMentorSession(response, mentorId) : response;
   } catch (error) {
     console.error("Subject creation failed", error);
+    logOperationalEvent("subject.failed", { durationMs: Date.now() - startedAt });
     const message = error instanceof Error && /document|supported|larger|read any text|couldn't read|Add up to/i.test(error.message) ? error.message : "Unable to create this subject.";
     return NextResponse.json({ error: message }, { status: 502 });
   }

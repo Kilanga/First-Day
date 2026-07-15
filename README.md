@@ -103,6 +103,7 @@ The model is therefore used for language, misconception design, and character ex
 7. **Reusable learning:** local-document focus prompts and shareable learning links with isolated recipient state.
 8. **Finishing pass:** keyboard-friendly chat controls, accessible live updates, resilient retry states, mobile-safe action bars, and clearer shared-learning handoff.
 9. **Guided continuity:** a no-API “I’m stuck” explanation scaffold, next-focus and latest-win cues on the learning desk, and an onboarding preview of the learning flow.
+10. **Mentor handoff:** private browser-only teaching checklists, Markdown report export, scoped document focus, and content-free operational logs for Vercel diagnostics.
 
 ## Local development
 
@@ -139,6 +140,7 @@ For production, Vercel runs the `build` script, which deploys Prisma migrations,
 - Set `MENTOR_SESSION_SECRET` in Vercel before deploying this version. Use a unique random value of at least 32 characters. Configure Neon with its pooled connection URL for production traffic.
 - The app pins Node 24 and pnpm 10 for Vercel compatibility. Database indexes cover the main dashboard, session-history, and message-history queries.
 - OpenAI calls time out after 45 seconds by default, and public subject creation has both per-mentor and hashed per-IP hourly limits. Keep Vercel Firewall enabled as a second layer in production.
+- Operational logs record route outcome and duration only. They deliberately exclude mentor IDs, prompts, messages, source filenames, document text, and model output.
 
 ### Production checklist
 
@@ -147,6 +149,7 @@ For production, Vercel runs the `build` script, which deploys Prisma migrations,
 3. Enable Vercel Firewall protections and configure deployment/error notifications in the Vercel project dashboard.
 4. Confirm Vercel has no analytics or marketing tracker enabled unless its consent flow and privacy notice have been updated.
 5. After deployment, confirm `/privacy`, `/terms`, `/legal`, a protected report URL, document upload, shared-link disablement, and **Delete my data** all work as expected.
+6. Export a completed report from its **Download Markdown** button and confirm the file contains only that mentor's report.
 
 ## Manual test flow
 
