@@ -11,7 +11,7 @@ export async function POST(request: Request, { params }: { params: { shareCode: 
       where: { shareCode: params.shareCode, shareEnabled: true },
       include: { hire: true },
     });
-    if (!template?.hire) return NextResponse.json({ error: "This onboarding link is no longer available." }, { status: 404 });
+    if (!template?.hire) return NextResponse.json({ error: "This shared learning link is no longer available." }, { status: 404 });
 
     await prisma.mentor.upsert({ where: { id: mentorId }, update: {}, create: { id: mentorId } });
     const trapMap = template.trapMap as unknown as TrapMap;
@@ -26,7 +26,7 @@ export async function POST(request: Request, { params }: { params: { shareCode: 
       include: { hire: true },
     });
     const firstQuestion = orderedConcepts(trapMap)[0]?.misconceptions[0]?.naive_question;
-    if (!firstQuestion || !subject.hire) throw new Error("The shared onboarding has no first question.");
+    if (!firstQuestion || !subject.hire) throw new Error("The shared learning has no first question.");
     return NextResponse.json({
       subjectId: subject.id,
       firstQuestion,
@@ -34,6 +34,6 @@ export async function POST(request: Request, { params }: { params: { shareCode: 
     });
   } catch (error) {
     console.error("Shared onboarding claim failed", error);
-    return NextResponse.json({ error: "Unable to start this onboarding." }, { status: 502 });
+    return NextResponse.json({ error: "Unable to start this learning." }, { status: 502 });
   }
 }

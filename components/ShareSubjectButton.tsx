@@ -19,5 +19,5 @@ export default function ShareSubjectButton({ mentorId, subjectId }: { mentorId?:
     }
   }
 
-  return <div className="mt-5"><button onClick={() => void share()} disabled={!mentorId || status === "working"} className="text-sm font-medium text-indigo-700 hover:text-indigo-900 disabled:opacity-50">{status === "working" ? "Creating link…" : status === "copied" ? "Link copied" : "Share onboarding"}</button>{status === "copied" ? <p className="mt-1 text-xs text-emerald-700">Anyone with the link can start their own fresh copy.</p> : null}{status === "error" ? <p className="mt-1 text-xs text-rose-700">Unable to create the link. Please try again.</p> : null}</div>;
+  return <div className="mt-5"><button onClick={() => void share()} disabled={!mentorId || status === "working"} className="text-sm font-medium text-indigo-700 hover:text-indigo-900 disabled:opacity-50">{status === "working" ? "Creating link…" : status === "copied" ? "Link copied" : "Share this learning"}</button>{status === "copied" ? <p className="mt-1 text-xs text-emerald-700">Anyone with the link can start their own fresh copy.</p> : null}{status === "error" ? <p className="mt-1 text-xs text-rose-700">Unable to create the link. Please try again.</p> : null}</div>;
 }
