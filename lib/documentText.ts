@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import mammoth from "mammoth";
+import pdfParse from "pdf-parse";
 
 const MAX_FILES = 4;
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
@@ -27,11 +28,7 @@ async function extractPptx(buffer: Buffer) {
 }
 
 async function extractPdf(buffer: Buffer) {
-  // pdf-parse has no reliable TypeScript declaration in the version used here.
-  // It is loaded lazily so non-PDF imports do not pay its startup cost.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const parsePdf = require("pdf-parse") as (data: Buffer) => Promise<{ text: string }>;
-  return (await parsePdf(buffer)).text;
+  return (await pdfParse(buffer)).text;
 }
 
 async function extractOne(file: File) {
