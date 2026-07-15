@@ -13,7 +13,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ subj
     const subject = await privateSubject(request, (await params).subjectId);
     if (!subject) return NextResponse.json({ error: "Learning subject not found." }, { status: 404 });
     return NextResponse.json(await refreshSubjectGeneration(subject.id));
-  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to check this study path." }, { status: 401 }); }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to check this study path.";
+    const status = /private learning session|private session/i.test(message) ? 401 : 502;
+    return NextResponse.json({ status: "failed", error: message }, { status });
+  }
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ subjectId: string }> }) {

@@ -55,12 +55,12 @@ export async function POST(request: Request) {
     if (body.focus !== undefined && typeof body.focus !== "string") return NextResponse.json({ error: "Your learning focus could not be read. Please try again." }, { status: 400 });
     if (typeof body.notes === "string" && body.notes.length > 12_000) return NextResponse.json({ error: "Study notes must be 12,000 characters or shorter." }, { status: 400 });
     if (typeof body.focus === "string" && body.focus.length > 600) return NextResponse.json({ error: "Your learning focus must be 600 characters or shorter." }, { status: 400 });
-    if (!isDemo && body.files.length > 0 && (typeof body.focus !== "string" || !body.focus.trim())) return NextResponse.json({ error: "Describe what your new hire should learn from the documents." }, { status: 400 });
+    if (!isDemo && body.files.length > 0 && (typeof body.focus !== "string" || !body.focus.trim())) return NextResponse.json({ error: "Describe what your study partner should learn from the documents." }, { status: 400 });
 
     const mentorId = mentorSession.mentorId;
     const ipLimit = Number(process.env.IP_SUBJECT_HOURLY_CAP ?? 10);
-    if (!isDemo && !(await consumeIpQuota(request, "subject", Number.isFinite(ipLimit) && ipLimit > 0 ? ipLimit : 10))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
-    if (!isDemo && !(await consumeAiActionQuota(mentorId, "subject"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
+    if (!isDemo && !(await consumeIpQuota(request, "subject", Number.isFinite(ipLimit) && ipLimit > 0 ? ipLimit : 10))) return NextResponse.json({ error: "The study room is closed for today — come back tomorrow." }, { status: 429 });
+    if (!isDemo && !(await consumeAiActionQuota(mentorId, "subject"))) return NextResponse.json({ error: "The study room is closed for today — come back tomorrow." }, { status: 429 });
     const providedTitle = typeof body.title === "string" ? body.title.trim() : "";
     const mentor = await prisma.mentor.upsert({ where: { id: mentorId }, update: {}, create: { id: mentorId } });
     const title = isDemo ? "Project Management Fundamentals" : providedTitle;

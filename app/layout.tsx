@@ -4,7 +4,7 @@ import LegalFooter from "@/components/LegalFooter";
 
 export const metadata: Metadata = {
   title: "First Day",
-  description: "Teach a new hire by explaining what you know."
+  description: "Learn by explaining what you know to a curious study partner."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
