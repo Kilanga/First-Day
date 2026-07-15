@@ -53,6 +53,10 @@ model LearningSession {
   gapReport Json?
   reportSnapshotAt DateTime?
   reportMessageCount Int?
+  agenda    Json?
+  agendaBonusAwarded Boolean @default(false)
+  journalEntry String?
+  mentorFeedback String?
   messages  Message[]
 }
 
@@ -74,6 +78,7 @@ model ConceptState {
   conceptId String
   status    String  @default("not_covered")
   attempts  Int     @default(0)
+  notebookEntry Json?
 
   @@unique([subjectId, conceptId])
 }

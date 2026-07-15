@@ -18,6 +18,9 @@ anonymous mentor UUID stored in localStorage, sent with every API call.
   evaluated. It never pretends to understand after a failed explanation.
 - Verdict JSON is used by the backend and for UI animations only — never
   displayed verbatim to the user.
+- Gamification must be expressed through the new hire's notebook, agenda,
+  journal, and in-character feedback. Never expose verdict names, hidden
+  concept states, scoring logic, or internal assessment language in the UI.
 - Every OpenAI call goes through lib/openai.ts (strict JSON parsing where
   expected, one retry on malformed JSON, never crash on bad output).
 - Keep scope minimal: no streaming, no multi-hire, no accounts in v1.

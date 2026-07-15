@@ -7,62 +7,30 @@ export type HireView = {
   stats: { comprehension: number; autonomy: number; reflexes: number; confidence: number };
 };
 
-type Props = { hire: HireView; xpFloat?: number; compact?: boolean };
+export type SkillConcept = { id: string; name: string; status: string; notebookEntry?: string };
+type Props = { hire: HireView; concepts?: SkillConcept[]; xpFloat?: number; compact?: boolean; breakthrough?: boolean };
 
-const TIER_LABELS: Record<string, string> = { week1: "Week 1", month1: "First Month", confirmed: "Confirmed" };
+const TIER_LABELS: Record<string, string> = { week1: "Intern", month1: "Junior", confirmed: "Confirmed" };
 const STAT_LABELS = { comprehension: "Comprehension", autonomy: "Autonomy", reflexes: "Reflexes", confidence: "Confidence" };
 
-function nextTierXp(tier: string) {
-  return tier === "week1" ? 51 : tier === "month1" ? 151 : 151;
-}
+function nextTierXp(tier: string) { return tier === "week1" ? 51 : tier === "month1" ? 151 : 151; }
+function tierStartXp(tier: string) { return tier === "month1" ? 51 : tier === "confirmed" ? 151 : 0; }
+export function tierLabel(tier: string) { return TIER_LABELS[tier] ?? "Intern"; }
 
-function tierStartXp(tier: string) {
-  return tier === "month1" ? 51 : tier === "confirmed" ? 151 : 0;
-}
-
-export function tierLabel(tier: string) {
-  return TIER_LABELS[tier] ?? "Week 1";
-}
-
-export default function HireCard({ hire, xpFloat, compact = false }: Props) {
+export default function HireCard({ hire, concepts = [], xpFloat, compact = false, breakthrough = false }: Props) {
   const initials = hire.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const target = nextTierXp(hire.tier);
   const start = tierStartXp(hire.tier);
   const progress = hire.tier === "confirmed" ? 100 : Math.min(100, ((hire.xp - start) / (target - start)) * 100);
-  const nextTier = hire.tier === "week1" ? "First Month" : hire.tier === "month1" ? "Confirmed" : null;
+  const nextTier = hire.tier === "week1" ? "Junior" : hire.tier === "month1" ? "Confirmed" : null;
   const remaining = Math.max(0, target - hire.xp);
 
-  if (compact) {
-    return (
-      <div className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-white px-4 py-3 shadow-sm">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-100 font-semibold text-indigo-700">{initials}</div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2"><p className="truncate font-semibold text-slate-900">{hire.name}</p><span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">{tierLabel(hire.tier)}</span></div>
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-indigo-100"><div className="h-full rounded-full bg-indigo-600 transition-all duration-700" style={{ width: `${progress}%` }} /></div>
-        </div>
-      </div>
-    );
-  }
+  if (compact) return <div className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-white px-4 py-3 shadow-sm"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-100 font-semibold text-indigo-700">{initials}</div><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><p className="truncate font-semibold text-slate-900">{hire.name}</p><span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">{tierLabel(hire.tier)}</span></div><div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-indigo-100"><div className="h-full rounded-full bg-indigo-600 transition-all duration-700" style={{ width: `${progress}%` }} /></div></div></div>;
 
-  return (
-    <aside className="relative rounded-2xl border border-indigo-100 bg-white p-6 shadow-sm">
-      {xpFloat ? <div className="xp-float absolute right-6 top-4 font-bold text-indigo-600">+{xpFloat} XP</div> : null}
-      <div className="flex items-center gap-4">
-        <div className="grid h-14 w-14 place-items-center rounded-2xl bg-indigo-100 text-lg font-bold text-indigo-700">{initials}</div>
-        <div><h2 className="font-semibold text-slate-900">{hire.name}</h2><span className="mt-1 inline-block rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">{tierLabel(hire.tier)}</span></div>
-      </div>
-      <section className="mt-7">
-        <div className="mb-2 flex justify-between text-sm"><span className="font-medium text-slate-700">Growth</span><span className="text-slate-500">{hire.xp} XP{hire.tier === "confirmed" ? "" : ` / ${target}`}</span></div>
-        <div className="h-2.5 overflow-hidden rounded-full bg-indigo-100"><div className="h-full rounded-full bg-indigo-600 transition-all duration-700 ease-out" style={{ width: `${progress}%` }} /></div>
-        <p className="mt-2 text-xs text-slate-500">{nextTier ? `${remaining} XP until ${nextTier}` : "Confirmed colleague"}</p>
-        <p className="mt-1 text-xs text-slate-400">Week 1: 0–50 · First Month: 51–150 · Confirmed: 151+</p>
-      </section>
-      <section className="mt-8 space-y-4">
-        {Object.entries(hire.stats).map(([key, value]) => <div key={key}>
-          <div className="mb-1.5 flex justify-between text-xs"><span className="font-medium text-slate-600">{STAT_LABELS[key as keyof typeof STAT_LABELS]}</span><span className="text-slate-400">{value}</span></div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-indigo-400 transition-all duration-700" style={{ width: `${Math.min(100, value * 3.34)}%` }} /></div>
-        </div>)}
-      </section>
-    </aside>
-  );
+  return <aside className="relative rounded-2xl border border-indigo-100 bg-white p-6 shadow-sm">
+    {breakthrough ? <div className="xp-float absolute right-6 top-4 rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-800">Breakthrough!</div> : xpFloat ? <div className="xp-float absolute right-6 top-4 font-bold text-indigo-600">+{xpFloat} XP</div> : null}
+    <div className="flex items-center gap-4"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-indigo-100 text-lg font-bold text-indigo-700">{initials}</div><div><h2 className="font-semibold text-slate-900">{hire.name}</h2><span className="mt-1 inline-block rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">{tierLabel(hire.tier)}</span></div></div>
+    <section className="mt-7"><div className="mb-2 flex justify-between text-sm"><span className="font-medium text-slate-700">Growth</span><span className="text-slate-500">{hire.xp} XP{hire.tier === "confirmed" ? "" : ` / ${target}`}</span></div><div className="h-2.5 overflow-hidden rounded-full bg-indigo-100"><div className="h-full rounded-full bg-indigo-600 transition-all duration-700 ease-out" style={{ width: `${progress}%` }} /></div><p className="mt-2 text-xs text-slate-500">{nextTier ? `${remaining} XP until ${nextTier}` : "Confirmed colleague"}</p><p className="mt-1 text-xs text-slate-400">Intern: 0–50 · Junior: 51–150 · Confirmed: 151+</p></section>
+    <section className="mt-8"><div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold text-slate-800">Skills matrix</h3><span className="text-xs text-slate-400">Current picture</span></div>{concepts.length ? <div className="space-y-2">{concepts.map((concept) => <div key={concept.id} className="flex items-center gap-3"><span className="min-w-0 flex-1 truncate text-xs text-slate-600">{concept.name}</span><span title={concept.status === "mastered" ? `${concept.name}: ${concept.notebookEntry ?? "Acquired"}` : `${concept.name}: ${concept.status === "not_covered" ? "Not explored yet" : "In progress"}`} className={`h-4 w-7 rounded-md border ${concept.status === "mastered" ? "border-emerald-400 bg-emerald-400" : concept.status === "not_covered" ? "border-slate-200 bg-slate-100" : "border-amber-300 bg-amber-300"}`} /></div>)}</div> : <p className="text-xs text-slate-400">Skills will take shape as you work together.</p>}<p className="mt-4 text-xs text-slate-400">Teaching signals: {Object.entries(hire.stats).map(([key, value]) => `${STAT_LABELS[key as keyof typeof STAT_LABELS]} ${value}`).join(" · ")}</p></section>
+  </aside>;
 }

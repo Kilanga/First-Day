@@ -25,8 +25,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const isDemo = body?.demo === true;
-    if (!body || typeof body.mentorId !== "string" || (!isDemo && (typeof body.title !== "string" || !body.title.trim())) ||
-      (body.notes !== undefined && typeof body.notes !== "string")) {
+    if (!body || typeof body.mentorId !== "string" || (!isDemo && (typeof body.title !== "string" || !body.title.trim() || body.title.length > 120)) ||
+      (body.notes !== undefined && (typeof body.notes !== "string" || body.notes.length > 12000))) {
       return NextResponse.json({ error: "mentorId and title are required." }, { status: 400 });
     }
 

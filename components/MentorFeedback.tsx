@@ -1,0 +1,21 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function MentorFeedback({ sessionId, initialFeedback, name, autoAsk = false }: { sessionId: string; initialFeedback?: string | null; name: string; autoAsk?: boolean }) {
+  const [feedback, setFeedback] = useState(initialFeedback ?? "");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
+  async function ask() {
+    setLoading(true); setError(undefined);
+    try {
+      const response = await fetch("/api/session/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Unable to ask for feedback right now.");
+      setFeedback(data.feedback);
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to ask for feedback right now."); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { if (autoAsk && !feedback && !loading) void ask(); }, [autoAsk]);
+  return <section className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">Feedback from {name}</p><h2 className="mt-1 text-lg font-semibold text-slate-900">A note for your next one-on-one</h2></div>{!feedback ? <button onClick={() => void ask()} disabled={loading} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{loading ? "Asking…" : `Ask ${name} for feedback`}</button> : null}</div>{feedback ? <p className="mt-4 text-sm leading-7 text-slate-700">“{feedback}”</p> : <p className="mt-3 text-sm leading-6 text-slate-600">After a couple of sessions, {name} will also leave a note automatically. You can ask now whenever it is useful.</p>}{error ? <p className="mt-3 text-sm text-rose-700">{error}</p> : null}</section>;
+}

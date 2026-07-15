@@ -30,3 +30,16 @@ export async function consumeMessageQuota(mentorId: string) {
   ]);
   return true;
 }
+
+/** Reverses a reservation when the chat request failed before persisting a reply. */
+export async function refundMessageQuota(mentorId: string) {
+  const now = new Date();
+  const mentorKey = `mentor:${mentorId}`;
+  const dailyCap = Number(process.env.DAILY_MESSAGE_CAP);
+  const hasDailyCap = Number.isFinite(dailyCap) && dailyCap > 0;
+  const dailyKey = `daily:${now.toISOString().slice(0, 10)}`;
+  await prisma.$transaction([
+    prisma.rateLimitCounter.updateMany({ where: { key: mentorKey, count: { gt: 0 } }, data: { count: { decrement: 1 } } }),
+    ...(hasDailyCap ? [prisma.rateLimitCounter.updateMany({ where: { key: dailyKey, count: { gt: 0 } }, data: { count: { decrement: 1 } } })] : []),
+  ]);
+}

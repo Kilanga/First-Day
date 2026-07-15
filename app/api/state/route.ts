@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     include: {
       hire: true,
       learnerState: true,
-      sessions: { where: { endedAt: null }, orderBy: { startedAt: "desc" }, take: 1, include: { messages: { orderBy: { createdAt: "asc" } } } },
+      sessions: { where: { endedAt: null }, orderBy: { startedAt: "desc" }, take: 1, include: { messages: { orderBy: { createdAt: "desc" }, take: 60 } } },
     },
   });
   return NextResponse.json({
@@ -40,9 +40,16 @@ export async function GET(request: Request) {
         toRevisit: subject.learnerState.filter((state) => state.status === "weak" || state.status === "partial").length,
         total: subject.learnerState.length,
       },
+      concepts: orderedConcepts(subject.trapMap as unknown as TrapMap).map((concept) => {
+        const state = subject.learnerState.find((item) => item.conceptId === concept.id);
+        const notebook = state?.notebookEntry as { text?: unknown } | null;
+        return { id: concept.id, name: concept.name, status: state?.status ?? "not_covered", notebookEntry: typeof notebook?.text === "string" ? notebook.text : undefined };
+      }),
       activeSession: subject.sessions[0] ? {
         id: subject.sessions[0].id,
-        messages: subject.sessions[0].messages.map((message) => ({ id: message.id, role: message.role, content: message.content })),
+        agenda: subject.sessions[0].agenda,
+        agendaBonusAwarded: subject.sessions[0].agendaBonusAwarded,
+        messages: [...subject.sessions[0].messages].reverse().map((message) => ({ id: message.id, role: message.role, content: message.content })),
       } : null,
     })),
   });
