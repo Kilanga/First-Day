@@ -22,6 +22,8 @@ model Subject {
   sourceNotes  String?
   sourceFiles  Json?
   trapMap      Json
+  shareCode    String?           @unique
+  shareEnabled Boolean           @default(false)
   createdAt    DateTime          @default(now())
   hire         Hire?
   sessions     LearningSession[]
