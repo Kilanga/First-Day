@@ -3,12 +3,16 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { orderedConcepts, type TrapMap } from "@/lib/prompts/trapmap";
 import { issueMentorSession, resolveMentorId } from "@/lib/mentorSession";
+import { consumeIpQuota } from "@/lib/ratelimit";
 
 export async function POST(request: Request, { params }: { params: Promise<{ shareCode: string }> }) {
   try {
     const { shareCode } = await params;
     const { mentorId: suppliedMentorId } = await request.json();
     const mentorSession = resolveMentorId(request, suppliedMentorId);
+    const configuredClaimCap = Number(process.env.IP_CLAIM_HOURLY_CAP ?? 50);
+    const claimCap = Number.isFinite(configuredClaimCap) && configuredClaimCap > 0 ? configuredClaimCap : 50;
+    if (!(await consumeIpQuota(request, "claim", claimCap))) return NextResponse.json({ error: "This shared link is busy. Please try again shortly." }, { status: 429 });
     const mentorId = mentorSession.mentorId;
     const template = await prisma.subject.findFirst({
       where: { shareCode, shareEnabled: true },
