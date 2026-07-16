@@ -38,15 +38,6 @@ export async function GET(request: Request) {
       firstQuestion: subject.generationStatus === "ready" ? nextQuestion(subject.trapMap as unknown as TrapMap, subject.learnerState) : undefined,
       hire: {
         name: subject.hire!.name,
-        tier: subject.hire!.tier,
-        xp: subject.hire!.xp,
-        stats: { comprehension: subject.hire!.statComprehension, autonomy: subject.hire!.statAutonomy, reflexes: subject.hire!.statReflexes, confidence: subject.hire!.statConfidence },
-      },
-      progress: {
-        explored: subject.learnerState.filter((state) => state.status !== "not_covered").length,
-        mastered: subject.learnerState.filter((state) => state.status === "mastered").length,
-        toRevisit: subject.learnerState.filter((state) => state.status === "weak" || state.status === "partial").length,
-        total: subject.learnerState.length,
       },
       concepts: (subject.generationStatus === "ready" ? orderedConcepts(subject.trapMap as unknown as TrapMap) : []).map((concept) => {
         const state = subject.learnerState.find((item) => item.conceptId === concept.id);

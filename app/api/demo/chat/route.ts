@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { callText, type ConversationMessage } from "@/lib/openai";
 import { consumeDemoChatQuota } from "@/lib/ratelimit";
-import { logOperationalEvent } from "@/lib/telemetry";
+import { logOperationalEvent, operationalErrorKind } from "@/lib/telemetry";
 
 export const runtime = "nodejs";
 
@@ -47,8 +47,7 @@ export async function POST(request: Request) {
     logOperationalEvent("demo.chat.completed", { durationMs: Date.now() - startedAt, conversation: body.conversationId });
     return NextResponse.json({ hireReply, name: demo.name });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Demo chat request failed", { message });
+    console.error("Demo chat request failed", operationalErrorKind(error));
     logOperationalEvent("demo.chat.failed", { durationMs: Date.now() - startedAt });
     return NextResponse.json({ error: "The demo office could not reply just now. Please try again." }, { status: 502 });
   }

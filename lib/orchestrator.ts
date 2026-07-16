@@ -171,22 +171,11 @@ export async function orchestrateChat(input: ChatInput) {
     sessionId: updated.sessionId,
     hireReply,
     teachingNote: mentorNote(verdict),
-    xpDelta: xp.xpDelta + (updated.agendaComplete ? 15 : 0),
-    statDeltas: xp.statDeltas,
-    tierUp: updated.hire.tier !== hire.tier,
     breakthrough,
     progressMoment,
     agendaComplete: updated.agendaComplete,
     hire: {
       name: updated.hire.name,
-      tier: updated.hire.tier,
-      xp: updated.hire.xp,
-      stats: {
-        comprehension: updated.hire.statComprehension,
-        autonomy: updated.hire.statAutonomy,
-        reflexes: updated.hire.statReflexes,
-        confidence: updated.hire.statConfidence,
-      },
     },
   };
 }

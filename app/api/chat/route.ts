@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { orchestrateChat } from "@/lib/orchestrator";
 import { consumeMessageQuota, refundMessageQuota } from "@/lib/ratelimit";
 import { requireMentorId } from "@/lib/mentorSession";
-import { logOperationalEvent } from "@/lib/telemetry";
+import { logOperationalEvent, operationalErrorKind } from "@/lib/telemetry";
 
 export async function POST(request: Request) {
   let chargedMentorId: string | undefined;
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (chargedMentorId) await refundMessageQuota(chargedMentorId).catch(() => undefined);
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Chat request failed", { message });
+    console.error("Chat request failed", operationalErrorKind(error));
     const temporarilyUnavailable = /quota|rate limit|insufficient_quota/i.test(message);
     logOperationalEvent("chat.failed", { durationMs: Date.now() - startedAt, status: temporarilyUnavailable ? 503 : 502, temporarilyUnavailable });
     return NextResponse.json({

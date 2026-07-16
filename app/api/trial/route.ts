@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import type { TrapMap } from "@/lib/prompts/trapmap";
 import { requireMentorId } from "@/lib/mentorSession";
 import { consumeAiActionQuota } from "@/lib/ratelimit";
+import { operationalErrorKind } from "@/lib/telemetry";
 
 type TrialQuestion = { conceptId: string; concept: string; question: string };
 type TrialAnswer = { conceptId: string; answer: string };
@@ -16,13 +17,13 @@ export async function POST(request: Request) {
     const { subjectId } = await request.json();
     const mentorId = requireMentorId(request);
     if (typeof subjectId !== "string") return NextResponse.json({ error: "subjectId is required." }, { status: 400 });
-    if (!(await consumeAiActionQuota(mentorId, "trial"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
     const subject = await prisma.subject.findFirst({ where: { id: subjectId, mentorId }, include: { hire: true, learnerState: true } });
     if (!subject?.hire) return NextResponse.json({ error: "Subject not found." }, { status: 404 });
 
     const trapMap = subject.trapMap as unknown as TrapMap;
     const states = subject.learnerState.filter((state) => ["mastered", "partial", "weak"].includes(state.status));
-    if (states.length < 3) return NextResponse.json({ error: "Cover at least three concepts before starting a trial." }, { status: 400 });
+    if (!subject.learnerState.length || subject.learnerState.some((state) => state.status !== "mastered")) return NextResponse.json({ error: "Help your new hire acquire every idea before starting the confirmation review." }, { status: 400 });
+    if (!(await consumeAiActionQuota(mentorId, "trial"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
     const stateById = new Map(states.map((state) => [state.conceptId, state.status]));
     const candidates = trapMap.concepts.filter((concept) => stateById.has(concept.id)).sort(() => Math.random() - 0.5).slice(0, Math.min(5, states.length));
 
@@ -52,9 +53,9 @@ export async function POST(request: Request) {
       prisma.hire.update({ where: { id: subject.hire.id }, data: { tier: nextTier } }),
     ]);
 
-    return NextResponse.json({ hireName: subject.hire.name, questions: results, score, passed, failed: failed.map(({ conceptId, concept }) => ({ conceptId, concept })), tier: nextTier });
+    return NextResponse.json({ hireName: subject.hire.name, questions: results, score, passed, failed: failed.map(({ conceptId, concept }) => ({ conceptId, concept })) });
   } catch (error) {
-    console.error("Trial failed", error);
+    console.error("Trial failed", operationalErrorKind(error));
     return NextResponse.json({ error: "Unable to run the trial." }, { status: 502 });
   }
 }

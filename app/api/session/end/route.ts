@@ -4,6 +4,7 @@ import { callJson, callText } from "@/lib/openai";
 import { prisma } from "@/lib/prisma";
 import { requireMentorId } from "@/lib/mentorSession";
 import { consumeAiActionQuota } from "@/lib/ratelimit";
+import { operationalErrorKind } from "@/lib/telemetry";
 
 type GapReport = {
   strengths: string[];
@@ -55,7 +56,9 @@ export async function POST(request: Request) {
     if (!session?.subject.hire) return NextResponse.json({ error: "Session not found." }, { status: 404 });
     const cachedReport = storedReport(session.gapReport);
     if (session.endedAt && cachedReport && (!refreshLanguage || cachedReport.language === "English")) return NextResponse.json({ sessionId: session.id, report: cachedReport, snapshotMessageCount: session.reportMessageCount, snapshotAt: session.reportSnapshotAt });
-    if (!cachedReport && !(await consumeAiActionQuota(mentorId, "report"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
+    const needsReportCall = !cachedReport || (refreshLanguage && cachedReport.language !== "English");
+    const needsMemoryCall = !preview && !session.endedAt;
+    if ((needsReportCall || needsMemoryCall) && !(await consumeAiActionQuota(mentorId, "report"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
 
     let report = cachedReport;
     if (report && refreshLanguage && report.language !== "English") {
@@ -74,6 +77,10 @@ export async function POST(request: Request) {
     }
     assertGapReport(report);
     report.language = "English";
+    if (session.endedAt) {
+      const updated = await prisma.learningSession.update({ where: { id: session.id }, data: { gapReport: report as unknown as Prisma.InputJsonValue } });
+      return NextResponse.json({ sessionId: session.id, report, snapshotMessageCount: updated.reportMessageCount, snapshotAt: updated.reportSnapshotAt });
+    }
     if (preview) {
       const updated = await prisma.learningSession.update({ where: { id: session.id }, data: cachedReport ? {} : { gapReport: report as unknown as Prisma.InputJsonValue, reportSnapshotAt: new Date(), reportMessageCount: session.messages.length } });
       return NextResponse.json({ sessionId: session.id, report, snapshotMessageCount: updated.reportMessageCount ?? session.messages.length, snapshotAt: updated.reportSnapshotAt });
@@ -100,7 +107,7 @@ export async function POST(request: Request) {
     ]);
     return NextResponse.json({ sessionId: session.id, report, snapshotMessageCount: session.reportMessageCount ?? session.messages.length, snapshotAt: session.reportSnapshotAt });
   } catch (error) {
-    console.error("Session end failed", error);
+    console.error("Session end failed", operationalErrorKind(error));
     return NextResponse.json({ error: "Unable to end this session." }, { status: 502 });
   }
 }

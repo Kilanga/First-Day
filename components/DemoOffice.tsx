@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { type FormEvent, useEffect, useState } from "react";
 import GapReport, { type Report } from "./GapReport";
-import HireCard, { type HireView, type SkillConcept } from "./HireCard";
+import HireCard from "./HireCard";
+import type { HireView, SkillConcept } from "@/lib/officeTypes";
 import NotebookPanel from "./NotebookPanel";
 import demoTrapMap from "@/public/demo/pm-fundamentals.json";
 
@@ -45,7 +46,7 @@ const conversations: DemoConversation[] = [
     label: "Project foundations",
     title: "Project Management Fundamentals",
     description: "A new hire learns to separate the work from the checkpoints around it.",
-    hire: { name: "Sam", tier: "month1", xp: 58, stats: { comprehension: 14, autonomy: 11, reflexes: 8, confidence: 1 } },
+    hire: { name: "Sam" },
     concepts: projectConcepts,
     agenda: [
       { name: "Milestones vs Deliverables", complete: true },
@@ -74,7 +75,7 @@ const conversations: DemoConversation[] = [
     label: "Number Quest Club",
     title: "A Playful Maths Onboarding",
     description: "A junior helper gets ready for their first afternoon at the Number Quest Club.",
-    hire: { name: "Milo", tier: "week1", xp: 36, stats: { comprehension: 10, autonomy: 7, reflexes: 9, confidence: 2 } },
+    hire: { name: "Milo" },
     concepts: mathsConcepts,
     agenda: [
       { name: "The Number Line", complete: true },

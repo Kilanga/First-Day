@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { generateMentorFeedback } from "@/lib/mentorFeedback";
 import { requireMentorId } from "@/lib/mentorSession";
 import { consumeAiActionQuota } from "@/lib/ratelimit";
+import { operationalErrorKind } from "@/lib/telemetry";
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     await prisma.learningSession.update({ where: { id: session.id }, data: { mentorFeedback: feedback } });
     return NextResponse.json({ feedback });
   } catch (error) {
-    console.error("Mentor feedback failed", error);
+    console.error("Mentor feedback failed", operationalErrorKind(error));
     return NextResponse.json({ error: "Unable to ask for feedback right now." }, { status: 502 });
   }
 }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { orderedConcepts, type TrapMap } from "@/lib/prompts/trapmap";
 import { issueMentorSession, resolveMentorId } from "@/lib/mentorSession";
 import { consumeIpQuota } from "@/lib/ratelimit";
+import { operationalErrorKind } from "@/lib/telemetry";
 
 export async function POST(request: Request, { params }: { params: Promise<{ shareCode: string }> }) {
   try {
@@ -41,7 +42,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ sha
     });
     return mentorSession.shouldIssueCookie ? issueMentorSession(response, mentorId) : response;
   } catch (error) {
-    console.error("Shared learning claim failed", error);
+    console.error("Shared learning claim failed", operationalErrorKind(error));
     return NextResponse.json({ error: "Unable to start this onboarding plan." }, { status: 502 });
   }
 }

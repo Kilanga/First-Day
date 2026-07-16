@@ -84,7 +84,11 @@ export async function extractSourceDocuments(files: File[]) {
     try {
       extracted = await extractOne(file);
     } catch (error) {
-      console.error(`Document extraction failed for ${file.name}`, error);
+      // Do not write uploaded file names, contents, or parser errors to logs.
+      console.error("Document extraction failed", {
+        name: error instanceof Error && error.name ? error.name : "UnknownError",
+        type,
+      });
       throw new Error(`We couldn't read ${file.name}. Please use a text-based, unprotected document, or paste the relevant text instead.`);
     }
     const text = cleanText(extracted);

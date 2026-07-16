@@ -1,7 +1,5 @@
 import type { ExaminerResult } from "./prompts/examiner";
 
-export type HireStats = { comprehension: number; autonomy: number; reflexes: number; confidence: number };
-
 export function applyXp(currentXp: number, verdict: ExaminerResult) {
   const xpDelta = verdict.verdict === "pass" ? 10 : verdict.verdict === "partial" ? 4 : verdict.verdict === "fail" ? 1 : 0;
   const nextXp = currentXp + xpDelta;

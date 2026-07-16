@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import demoTrapMap from "@/public/demo/pm-fundamentals.json";
 import { assertMentorSessionConfigured, issueMentorSession, requireMentorId, resolveMentorId } from "@/lib/mentorSession";
 import { consumeAiActionQuota, consumeIpQuota, refundAiActionQuota } from "@/lib/ratelimit";
-import { logOperationalEvent } from "@/lib/telemetry";
+import { logOperationalEvent, operationalErrorKind } from "@/lib/telemetry";
 import { startSubjectGeneration } from "@/lib/subjectGeneration";
 
 export const runtime = "nodejs";
@@ -68,7 +68,6 @@ export async function POST(request: Request) {
     const mentorId = mentorSession.mentorId;
     const ipLimit = Number(process.env.IP_SUBJECT_HOURLY_CAP ?? 10);
     if (!isDemo && !(await consumeIpQuota(request, "subject", Number.isFinite(ipLimit) && ipLimit > 0 ? ipLimit : 10))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
-    if (!isDemo && !(await consumeAiActionQuota(mentorId, "subject"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
     const providedTitle = typeof body.title === "string" ? body.title.trim() : "";
     const mentor = await prisma.mentor.upsert({ where: { id: mentorId }, update: {}, create: { id: mentorId } });
     const title = isDemo ? DEMO_SUBJECT_TITLE : providedTitle;
@@ -86,14 +85,6 @@ export async function POST(request: Request) {
           status: "ready",
           hire: {
             name: existingDemo.hire.name,
-            tier: existingDemo.hire.tier,
-            xp: existingDemo.hire.xp,
-            stats: {
-              comprehension: existingDemo.hire.statComprehension,
-              autonomy: existingDemo.hire.statAutonomy,
-              reflexes: existingDemo.hire.statReflexes,
-              confidence: existingDemo.hire.statConfidence,
-            },
             personality: existingDemo.hire.personality,
           },
           firstQuestion: orderedConcepts(existingTrapMap)[0]?.misconceptions[0]?.naive_question,
@@ -102,6 +93,7 @@ export async function POST(request: Request) {
       }
     }
     const imported = isDemo ? { text: "", sources: [] as ImportedSource[] } : await extractSourceDocuments(body.files);
+    if (!isDemo && !(await consumeAiActionQuota(mentorId, "subject"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
     const learningFocus = typeof body.focus === "string" ? body.focus.trim() : "";
     const promptSourceNotes = [learningFocus ? `LEARNING FOCUS: ${learningFocus}` : "", typeof body.notes === "string" ? body.notes.trim() : "", imported.text].filter(Boolean).join("\n\n");
     const retainedNotes = [learningFocus ? `LEARNING FOCUS: ${learningFocus}` : "", typeof body.notes === "string" ? body.notes.trim() : ""].filter(Boolean).join("\n\n");
@@ -124,24 +116,18 @@ export async function POST(request: Request) {
     if (!isDemo) {
       try { await startSubjectGeneration(subject.id, generationPrompt); generationStarted = true; }
       catch (error) {
-        const details = error as { name?: unknown; message?: unknown; status?: unknown; code?: unknown };
-        console.error("Subject background start failed", {
-          name: typeof details?.name === "string" ? details.name : "UnknownError",
-          message: typeof details?.message === "string" ? details.message.slice(0, 240) : "No message",
-          status: typeof details?.status === "number" ? details.status : undefined,
-          code: typeof details?.code === "string" ? details.code : undefined,
-        });
+        console.error("Subject background start failed", operationalErrorKind(error));
         await prisma.subject.update({ where: { id: subject.id }, data: { generationStatus: "failed", generationError: "We could not start preparing this onboarding plan. Try again." } });
         await refundAiActionQuota(mentorId, "subject");
       }
     }
     const firstQuestion = trapMap ? orderedConcepts(trapMap)[0]?.misconceptions[0]?.naive_question : undefined;
     if (!subject.hire) throw new Error("The new hire could not be created.");
-    const response = NextResponse.json({ subjectId: subject.id, status: generationStarted ? (isDemo ? "ready" : "preparing") : "failed", hire: { name: subject.hire.name, tier: subject.hire.tier, xp: subject.hire.xp, stats: { comprehension: subject.hire.statComprehension, autonomy: subject.hire.statAutonomy, reflexes: subject.hire.statReflexes, confidence: subject.hire.statConfidence }, personality }, firstQuestion });
+    const response = NextResponse.json({ subjectId: subject.id, status: generationStarted ? (isDemo ? "ready" : "preparing") : "failed", hire: { name: subject.hire.name, personality }, firstQuestion });
     logOperationalEvent(generationStarted ? "subject.created" : "subject.generation_start_failed", { durationMs: Date.now() - startedAt, demo: isDemo });
     return mentorSession.shouldIssueCookie ? issueMentorSession(response, mentorId) : response;
   } catch (error) {
-    console.error("Subject creation failed", error);
+    console.error("Subject creation failed", operationalErrorKind(error));
     logOperationalEvent("subject.failed", { durationMs: Date.now() - startedAt });
     const message = error instanceof Error && /private-session signing secret/i.test(error.message) ? "Private onboarding sessions are unavailable right now. Please return to your onboarding desk and try again."
       : error instanceof Error && /document|supported|larger|read any text|couldn't read|Add up to/i.test(error.message) ? error.message
@@ -168,7 +154,7 @@ export async function DELETE(request: Request) {
     ]);
     return NextResponse.json({ deleted: true });
   } catch (error) {
-    console.error("Subject deletion failed", error);
+    console.error("Subject deletion failed", operationalErrorKind(error));
     return NextResponse.json({ error: "Unable to delete this learning subject." }, { status: 502 });
   }
 }

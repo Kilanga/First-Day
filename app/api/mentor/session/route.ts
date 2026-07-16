@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { issueMentorSession, MENTOR_SESSION_COOKIE, requireMentorId, resolveMentorId } from "@/lib/mentorSession";
 import { prisma } from "@/lib/prisma";
+import { operationalErrorKind } from "@/lib/telemetry";
 
 export async function POST(request: Request) {
   try {
@@ -34,7 +35,7 @@ export async function DELETE(request: Request) {
     response.cookies.set({ name: MENTOR_SESSION_COOKIE, value: "", httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 0 });
     return response;
   } catch (error) {
-    console.error("Mentor data deletion failed", error);
+    console.error("Mentor data deletion failed", operationalErrorKind(error));
     return NextResponse.json({ error: "Unable to delete your onboarding desk data." }, { status: 502 });
   }
 }

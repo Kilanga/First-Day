@@ -2,10 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import ChatWindow, { type ChatMessage } from "./ChatWindow";
+import ChatWindow from "./ChatWindow";
 import GapReport, { type Report } from "./GapReport";
-import HireCard, { type HireView, type SkillConcept } from "./HireCard";
+import HireCard from "./HireCard";
 import NotebookPanel from "./NotebookPanel";
+import type { ChatMessage, HireView, ProgressMoment, SkillConcept } from "@/lib/officeTypes";
 
 type ActiveSession = { id: string; agenda?: unknown; agendaBonusAwarded?: boolean; messages: ChatMessage[] };
 type WorkspaceSubject = {
@@ -14,7 +15,6 @@ type WorkspaceSubject = {
   firstQuestion?: string;
   hire: HireView;
   concepts: SkillConcept[];
-  progress?: { explored: number; mastered: number; toRevisit: number; total: number };
   activeSession: ActiveSession | null;
   latestCompletedSession?: { id: string } | null;
 };
@@ -38,13 +38,8 @@ function agendaIds(value: unknown) {
 export default function OfficeWorkspace({ subjectId, title, name, initialQuestion }: Props) {
   const router = useRouter();
   const [subjects, setSubjects] = useState<WorkspaceSubject[]>([]);
-  const [hire, setHire] = useState<HireView>({
-    name,
-    tier: "week1",
-    xp: 0,
-    stats: { comprehension: 0, autonomy: 0, reflexes: 0, confidence: 0 },
-  });
-  const [progressMoment, setProgressMoment] = useState<"landed" | "getting-there">();
+  const [hire, setHire] = useState<HireView>({ name });
+  const [progressMoment, setProgressMoment] = useState<ProgressMoment>();
   const [breakthrough, setBreakthrough] = useState(false);
   const [agendaComplete, setAgendaComplete] = useState(false);
   const [ending, setEnding] = useState(false);
@@ -96,7 +91,7 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, []);
 
-  function updateHire(nextHire: HireView, _xpDelta: number, _crossedTier: boolean, nextSessionId: string, didBreakthrough: boolean, finishedAgenda: boolean, nextProgressMoment?: "landed" | "getting-there") {
+  function updateHire(nextHire: HireView, nextSessionId: string, didBreakthrough: boolean, finishedAgenda: boolean, nextProgressMoment?: ProgressMoment) {
     setHire(nextHire);
     setSessionId(nextSessionId);
     setSubjects((current) => current.map((subject) => subject.id === subjectId
