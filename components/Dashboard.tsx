@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { tierLabel } from "./HireCard";
+import { rampUpSummary } from "./HireCard";
 import LearningHistory from "./LearningHistory";
 import ShareSubjectButton from "./ShareSubjectButton";
 import WaitingMessage from "./WaitingMessage";
@@ -125,15 +125,16 @@ export default function Dashboard() {
         {subjects.map((subject) => {
           const focus = nextFocus(subject);
           const acquired = latestAcquired(subject);
+          const rampUp = rampUpSummary(subject.concepts);
           const pending = subject.generationStatus === "preparing";
           const failed = subject.generationStatus === "failed";
           return <article key={subject.id} className="surface-card p-6">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#4F46E5]">{pending ? "Preparing" : failed ? "Needs a retry" : subject.activeSession ? "In progress" : subject.latestCompletedSession ? "Session completed" : "Ready to begin"}</p>
-              <span className="rounded-full bg-[#EEF2FF] px-2.5 py-1 text-xs font-semibold text-[#4F46E5]">{tierLabel(subject.hire.tier)}</span>
+              <span className="rounded-full bg-[#EEF2FF] px-2.5 py-1 text-xs font-semibold text-[#4F46E5]">{rampUp.tier}</span>
             </div>
             <h2 className="font-display mt-4 text-2xl font-semibold text-[#111827]">{subject.title}</h2>
-            <p className="mt-2 text-sm text-[#6B7280]">{subject.hire.name} &middot; {subject.hire.xp} XP</p>
+            <p className="mt-2 text-sm text-[#6B7280]">{subject.hire.name} &middot; {rampUp.acquired} of {rampUp.total} ideas down</p>
             {pending ? <div className="mt-5 flex items-center gap-3 rounded-xl bg-[#EEF2FF] px-3 py-3 text-xs leading-5 text-[#4F46E5]"><span className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-200 border-t-[#4F46E5]" /><WaitingMessage /></div> : null}
             {failed ? <div className="mt-5 rounded-xl bg-rose-50 px-3 py-3 text-xs leading-5 text-rose-700"><p>{subject.generationError ?? "The onboarding plan could not be prepared."}</p><button onClick={() => void retry(subject)} disabled={retryingId === subject.id} className="mt-2 font-semibold underline underline-offset-2 disabled:opacity-50">{retryingId === subject.id ? "Restarting..." : "Try again"}</button></div> : null}
             {!pending && !failed ? <div className="mt-5 rounded-xl bg-[#F9FAFB] px-3 py-3 text-xs leading-5 text-[#374151]"><p><span className="font-semibold text-[#111827]">Progress:</span> {subject.progress.mastered} of {subject.progress.total} ideas acquired</p>{focus ? <p className="mt-1"><span className="font-semibold text-[#111827]">Next focus:</span> {focus.name}</p> : <p className="mt-1 font-semibold text-emerald-700">Everything is in great shape.</p>}{acquired ? <p className="mt-1"><span className="font-semibold text-[#111827]">Latest win:</span> {acquired.name}</p> : null}</div> : null}

@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 const conversations = [
-  { slug: "project-foundations", topic: "Project Management Fundamentals", name: "Sam", tier: "First Month", xp: 58, mastered: 2, total: 6, focus: "Scope Creep", latestWin: "Stakeholders vs the Sponsor", report: "1 teaching report", description: "Sam has already worked through the foundations and is ready to discuss a client change request." },
-  { slug: "number-quest", topic: "A Playful Maths Onboarding", name: "Milo", tier: "Week 1", xp: 36, mastered: 2, total: 5, focus: "Negative Numbers", latestWin: "Equivalent Fractions", report: "1 teaching report", description: "Milo is preparing for an afternoon at the Number Quest Club and wants more confidence below zero." },
+  { slug: "project-foundations", topic: "Project Management Fundamentals", name: "Sam", tier: "Week 1", mastered: 2, total: 6, focus: "Scope Creep", latestWin: "Stakeholders vs the Sponsor", report: "1 teaching report", description: "Sam has already worked through the foundations and is ready to discuss a client change request." },
+  { slug: "number-quest", topic: "A Playful Maths Onboarding", name: "Milo", tier: "Week 1", mastered: 2, total: 5, focus: "Negative Numbers", latestWin: "Equivalent Fractions", report: "1 teaching report", description: "Milo is preparing for an afternoon at the Number Quest Club and wants more confidence below zero." },
 ];
 
 export default function DemoDesk() {
@@ -18,7 +18,7 @@ export default function DemoDesk() {
         {conversations.map((conversation) => <article key={conversation.slug} className="surface-card p-6">
           <div className="flex items-center justify-between gap-3"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#4F46E5]">In progress</p><span className="rounded-full bg-[#EEF2FF] px-2.5 py-1 text-xs font-semibold text-[#4F46E5]">{conversation.tier}</span></div>
           <h2 className="font-display mt-4 text-2xl font-semibold text-[#111827]">{conversation.topic}</h2>
-          <p className="mt-2 text-sm text-[#6B7280]">{conversation.name} · {conversation.xp} XP</p>
+          <p className="mt-2 text-sm text-[#6B7280]">{conversation.name} · {conversation.mastered} of {conversation.total} ideas down</p>
           <div className="mt-5 rounded-xl bg-[#F9FAFB] px-3 py-3 text-xs leading-5 text-[#374151]"><p><span className="font-semibold text-[#111827]">Progress:</span> {conversation.mastered} of {conversation.total} ideas acquired</p><p className="mt-1"><span className="font-semibold text-[#111827]">Next focus:</span> {conversation.focus}</p><p className="mt-1"><span className="font-semibold text-[#111827]">Latest win:</span> {conversation.latestWin}</p></div>
           <p className="mt-4 text-sm leading-6 text-[#6B7280]">{conversation.description}</p>
           <div className="mt-6 flex flex-wrap items-center gap-3"><Link href={`/demo/${conversation.slug}`} className="button-primary !px-4 !py-2.5">Resume session</Link><span className="text-xs font-medium text-[#6B7280]">{conversation.report}</span></div>

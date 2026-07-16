@@ -95,12 +95,12 @@ For local end-to-end checks without using OpenAI credits, set `OPENAI_MOCK_MODE=
 
 1. Open `/desk`, then choose **Create a new subject**. If attaching documentation, state the required onboarding focus.
 2. Meet the generated new hire and enter the office.
-3. Reply to a naive question; verify the in-character response and the XP/tier animation.
+3. Reply to a naive question; verify the in-character response and the idea-landed, getting-there, or breakthrough moment.
 4. Give an incomplete explanation, then improve it; verify the breakthrough moment and a field-notes entry.
 5. Cover the office-plan items; verify the checklist and closing message.
 6. End the session; verify the journal, teaching report, and feedback request.
 7. Open the knowledge check and verify that the colleague only answers at the level you taught.
-8. Use **Share this onboarding** in a private window; the recipient should receive the same subject and colleague but no prior messages or XP.
+8. Use **Share this onboarding** in a private window; the recipient should receive the same subject and colleague but no prior messages or accumulated progress.
 9. From `/`, choose **Try the demo subject**; open Sam or Milo's office, write a reply, and verify that an in-character GPT-5.6 follow-up appears without creating a subject in your onboarding desk.
 10. Open `/demo`; switch between the two static conversations and verify that neither appears in your private onboarding desk.
 

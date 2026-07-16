@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import ChatWindow, { type ChatMessage } from "./ChatWindow";
 import GapReport, { type Report } from "./GapReport";
-import HireCard, { tierLabel, type HireView, type SkillConcept } from "./HireCard";
+import HireCard, { type HireView, type SkillConcept } from "./HireCard";
 import NotebookPanel from "./NotebookPanel";
 
 type ActiveSession = { id: string; agenda?: unknown; agendaBonusAwarded?: boolean; messages: ChatMessage[] };
@@ -44,8 +44,7 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
     xp: 0,
     stats: { comprehension: 0, autonomy: 0, reflexes: 0, confidence: 0 },
   });
-  const [xpFloat, setXpFloat] = useState(0);
-  const [tierUp, setTierUp] = useState(false);
+  const [progressMoment, setProgressMoment] = useState<"landed" | "getting-there">();
   const [breakthrough, setBreakthrough] = useState(false);
   const [agendaComplete, setAgendaComplete] = useState(false);
   const [ending, setEnding] = useState(false);
@@ -77,6 +76,7 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
       .filter((concept): concept is SkillConcept => Boolean(concept)),
     [currentSubject],
   );
+  const readyForConfirmationReview = Boolean(currentSubject?.concepts.length) && currentSubject!.concepts.every((concept) => concept.status === "mastered");
 
   useEffect(() => {
     if (!currentSubject) return;
@@ -96,19 +96,15 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, []);
 
-  function updateHire(nextHire: HireView, xpDelta: number, crossedTier: boolean, nextSessionId: string, didBreakthrough: boolean, finishedAgenda: boolean) {
+  function updateHire(nextHire: HireView, _xpDelta: number, _crossedTier: boolean, nextSessionId: string, didBreakthrough: boolean, finishedAgenda: boolean, nextProgressMoment?: "landed" | "getting-there") {
     setHire(nextHire);
     setSessionId(nextSessionId);
     setSubjects((current) => current.map((subject) => subject.id === subjectId
       ? { ...subject, hire: nextHire, activeSession: subject.activeSession ?? { id: nextSessionId, messages: [] } }
       : subject));
-    if (xpDelta) {
-      setXpFloat(xpDelta);
-      window.setTimeout(() => setXpFloat(0), 1100);
-    }
-    if (crossedTier) {
-      setTierUp(true);
-      window.setTimeout(() => setTierUp(false), 3200);
+    if (nextProgressMoment) {
+      setProgressMoment(nextProgressMoment);
+      window.setTimeout(() => setProgressMoment(undefined), 1500);
     }
     if (didBreakthrough) {
       setBreakthrough(true);
@@ -175,7 +171,7 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
           <div className="flex items-center gap-1 sm:gap-2">
             <button onClick={() => router.push("/desk")} className="rounded-full px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Onboarding desk</button>
             <button onClick={viewReport} disabled={loadingReport || !currentSubject?.latestCompletedSession} title={!currentSubject?.latestCompletedSession ? "End the session to generate your first report." : undefined} className="rounded-full px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-[#EEF2FF] disabled:cursor-not-allowed disabled:opacity-50">{loadingReport ? "Preparing..." : "View report"}</button>
-            {(currentSubject?.progress?.explored ?? 0) >= 3 ? <button onClick={() => router.push(`/trial?subjectId=${currentSubject?.id}`)} title="Watch your colleague apply what you taught without help." className="rounded-full px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-[#EEF2FF]">Knowledge check</button> : null}
+            {readyForConfirmationReview ? <button onClick={() => router.push(`/trial?subjectId=${currentSubject?.id}`)} title="Watch your colleague apply every idea without help." className="rounded-full px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-[#EEF2FF]">Start confirmation review</button> : null}
             <button onClick={() => setConfirmEnd(true)} disabled={ending || !sessionId} className="rounded-full border border-[#E5E7EB] px-4 py-2 text-sm font-semibold text-[#111827] hover:bg-[#F9FAFB] disabled:opacity-50">{ending ? "Ending..." : "End session"}</button>
           </div>
         </div>
@@ -190,7 +186,6 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
         <HireCard hire={hire} concepts={currentSubject?.concepts} compact />
         <button onClick={() => setNotebookOpen(true)} className="mt-3 w-full rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-900 transition hover:bg-amber-100">Open {hire.name}&apos;s field notes</button>
       </div>
-      {tierUp ? <div className="mb-5 rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-3 text-center text-sm font-semibold text-indigo-800">{hire.name} is now a {tierLabel(hire.tier)}!</div> : null}
       {breakthrough ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-center text-sm font-semibold text-amber-900">A real breakthrough - {hire.name} finally connected the dots.</div> : null}
       {agendaComplete ? <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-center text-sm font-semibold text-emerald-900">That was a great one-on-one - I got everything on my list!</div> : null}
       <div className="grid items-start gap-6 md:grid-cols-3">
@@ -200,7 +195,7 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">Today&apos;s learning plan</p>
             {agenda.length ? <ul className="mt-4 space-y-3">{agenda.map((concept) => <li key={concept.id} className="flex items-center gap-3 text-sm text-slate-700"><span className={`grid h-5 w-5 place-items-center rounded-full text-xs ${concept.status === "mastered" ? "bg-emerald-500 text-white" : "border border-slate-300 text-transparent"}`}>✓</span>{concept.name}</li>)}</ul> : <p className="mt-3 text-sm text-slate-500">Send a first message and {hire.name}&apos;s learning plan will appear here.</p>}
           </section>
-          <div className="hidden md:block"><HireCard hire={hire} concepts={currentSubject?.concepts} xpFloat={xpFloat} breakthrough={breakthrough} onOpenFieldNotes={() => setNotebookOpen(true)} /></div>
+          <div className="hidden md:block"><HireCard hire={hire} concepts={currentSubject?.concepts} progressMoment={progressMoment} breakthrough={breakthrough} onOpenFieldNotes={() => setNotebookOpen(true)} /></div>
         </div>
       </div>
     </div>

@@ -86,6 +86,8 @@ export async function orchestrateChat(input: ChatInput) {
   const verdictConceptId = currentTarget?.id ?? verdict.concept_id;
   const priorState = currentTarget ? subject.learnerState.find((state) => state.conceptId === currentTarget.id) : undefined;
   const breakthrough = priorState?.status === "weak" && stateStatus === "mastered";
+  const ideaLanded = stateStatus === "mastered" && priorState?.status !== "mastered";
+  const progressMoment = breakthrough ? undefined : ideaLanded ? "landed" : stateStatus === "partial" ? "getting-there" : undefined;
   const agendaValue = session?.agenda as { conceptIds?: unknown } | null | undefined;
   const agendaIds = Array.isArray(agendaValue?.conceptIds)
     ? agendaValue.conceptIds.filter((value): value is string => typeof value === "string")
@@ -173,6 +175,7 @@ export async function orchestrateChat(input: ChatInput) {
     statDeltas: xp.statDeltas,
     tierUp: updated.hire.tier !== hire.tier,
     breakthrough,
+    progressMoment,
     agendaComplete: updated.agendaComplete,
     hire: {
       name: updated.hire.name,

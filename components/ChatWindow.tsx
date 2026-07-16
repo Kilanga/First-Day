@@ -11,7 +11,7 @@ type Props = {
   initialQuestion?: string;
   initialSessionId?: string;
   initialMessages?: ChatMessage[];
-  onHireUpdate: (hire: HireView, xpDelta: number, tierUp: boolean, sessionId: string, breakthrough: boolean, agendaComplete: boolean) => void;
+  onHireUpdate: (hire: HireView, xpDelta: number, tierUp: boolean, sessionId: string, breakthrough: boolean, agendaComplete: boolean, progressMoment?: "landed" | "getting-there") => void;
 };
 
 export default function ChatWindow({ subjectId, hire, initialQuestion, initialSessionId, initialMessages, onHireUpdate }: Props) {
@@ -68,7 +68,8 @@ export default function ChatWindow({ subjectId, hire, initialQuestion, initialSe
       if (!response.ok) throw new Error(response.status === 429 ? "The office is closed for today — come back tomorrow." : data.error ?? "Unable to send the message.");
       setSessionId(data.sessionId);
       setMessages((current) => [...current, { id: crypto.randomUUID(), role: "hire", content: data.hireReply, feedback: data.teachingNote }]);
-      onHireUpdate(data.hire, data.xpDelta, data.tierUp, data.sessionId, Boolean(data.breakthrough), Boolean(data.agendaComplete));
+      const progressMoment = data.progressMoment === "landed" || data.progressMoment === "getting-there" ? data.progressMoment : undefined;
+      onHireUpdate(data.hire, data.xpDelta, data.tierUp, data.sessionId, Boolean(data.breakthrough), Boolean(data.agendaComplete), progressMoment);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to send the message.");
       setLastFailedMessage(message);
