@@ -20,9 +20,9 @@ A private misconception map, a structured examiner, and deterministic applicatio
 - Turns progress into in-character artifacts: field notes, an office plan, breakthrough moments, a journal entry, and a skills matrix.
 - Produces an end-of-session teaching report and a short 360-style note from the colleague.
 - Supports several subjects, resumable sessions, report history, and public links that create a fresh private onboarding copy for each recipient.
-- Keeps the welcome screen, personal onboarding desk, and read-only demo deliberately separate. The demo has its own finished conversations and never reads or changes a visitor's private data.
+- Keeps the welcome screen, personal onboarding desk, and ephemeral demo deliberately separate. The demo has its own finished conversations and never reads or changes a visitor's private data.
 
-The demo includes two fixed, read-only conversations: project-management foundations with Sam and a playful maths onboarding with Milo.
+The demo includes two fixed conversations: project-management foundations with Sam and a playful maths onboarding with Milo. Visitors can continue either conversation with a real, ephemeral GPT-5.6 reply; demo messages are never saved.
 
 ## Stack
 
@@ -37,13 +37,13 @@ There is intentionally no account system in v1. An anonymous mentor UUID is crea
 
 ## Architecture
 
-1. `/` is a general welcome screen. `/desk` is the private onboarding desk, and it is the sole route for creating a new subject.
+1. `/` is a general welcome screen. Its primary demo CTA opens a filled, browser-only onboarding desk; `/desk` is the sole route for creating a custom subject.
 2. The subject route creates the mentor, subject, new hire, and one `ConceptState` per generated concept.
 3. The Examiner evaluates the mentor's latest explanation privately and returns structured data for backend updates.
 4. The orchestrator updates concept state, XP, tiers, office plan, skills, and breakthrough state.
 5. The new hire receives the private state and speaks only as a colleague. It never exposes the concept map, XP, verdicts, or evaluation process.
 6. The report route turns private notes into mentor-facing strengths and concrete next steps, and stores an in-character journal entry.
-7. `/demo` and its two conversation routes are static snapshots, with no database or API calls.
+7. `/demo` and its two conversation routes are static snapshots. Their chat calls a tightly scoped, IP-limited GPT-5.6 route but never writes a database record.
 
 All OpenAI access goes through [`lib/openai.ts`](./lib/openai.ts). JSON calls request structured output, parse it strictly, retry once after malformed JSON, and fail safely through the API route rather than crashing the UI.
 
@@ -101,13 +101,14 @@ For local end-to-end checks without using OpenAI credits, set `OPENAI_MOCK_MODE=
 6. End the session; verify the journal, teaching report, and feedback request.
 7. Open the knowledge check and verify that the colleague only answers at the level you taught.
 8. Use **Share this onboarding** in a private window; the recipient should receive the same subject and colleague but no prior messages or XP.
-9. Open `/demo`; switch between the two static demo conversations and verify that neither appears in your private onboarding desk.
+9. From `/`, choose **Try the demo subject**; open Sam or Milo's office, write a reply, and verify that an in-character GPT-5.6 follow-up appears without creating a subject in your onboarding desk.
+10. Open `/demo`; switch between the two static conversations and verify that neither appears in your private onboarding desk.
 
 ## Current v1 boundaries
 
 - No authentication or multi-user collaboration.
 - No streaming responses.
 - One new hire per subject.
-- The public demo is read-only and contains fixed content only; it never becomes a user session.
+- The demo has fixed starting content. Its chat is ephemeral: it uses GPT-5.6 but never becomes a user session or writes a message to the database.
 - No external documentation connectors in v1.
 - Sharing is anonymous and link-based; it is for reusable onboarding setups, not live collaboration.

@@ -10,9 +10,19 @@ function clientAddress(request: Request) {
 }
 
 /** A hashed, short-lived network key for public creation endpoints. */
-export async function consumeIpQuota(request: Request, scope: "subject" | "claim", limit: number) {
+export async function consumeIpQuota(request: Request, scope: "subject" | "claim" | "demo-chat", limit: number) {
   const digest = createHash("sha256").update(clientAddress(request)).digest("hex").slice(0, 24);
   return consumeCounter(`ip:${scope}:${digest}`, limit, HOUR_MS);
+}
+
+/** Public demo messages have no mentor account, so protect model spend by IP and by a shared daily cap. */
+export async function consumeDemoChatQuota(request: Request) {
+  const hourlyCap = Number(process.env.DEMO_CHAT_HOURLY_CAP ?? 20);
+  const hourlyAllowed = await consumeIpQuota(request, "demo-chat", Number.isFinite(hourlyCap) && hourlyCap > 0 ? hourlyCap : 20);
+  if (!hourlyAllowed) return false;
+  const dailyCap = Number(process.env.DAILY_AI_CALL_CAP ?? 100);
+  const day = new Date().toISOString().slice(0, 10);
+  return consumeCounter(`ai:demo:daily:${day}`, Number.isFinite(dailyCap) && dailyCap > 0 ? dailyCap : 100, DAY_MS);
 }
 
 async function consumeCounter(key: string, limit: number, windowMs: number) {

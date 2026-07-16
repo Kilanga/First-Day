@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
+import GapReport, { type Report } from "./GapReport";
 import HireCard, { type HireView, type SkillConcept } from "./HireCard";
 import NotebookPanel from "./NotebookPanel";
 import demoTrapMap from "@/public/demo/pm-fundamentals.json";
@@ -16,6 +17,7 @@ type DemoConversation = {
   concepts: SkillConcept[];
   agenda: Array<{ name: string; complete: boolean }>;
   messages: DemoMessage[];
+  report: Report;
 };
 
 const projectConcepts: SkillConcept[] = demoTrapMap.concepts.map((concept, index) => ({
@@ -58,6 +60,14 @@ const conversations: DemoConversation[] = [
       { role: "hire", content: "So an operations team can still be a stakeholder even when they are pushing back. The sponsor is not just another person to keep happy - they are where major trade-offs go." },
       { role: "hire", content: "Can I check one more thing? If a client asks for one extra field on a form, we should still look at the impact before slipping it into the plan, right?" },
     ],
+    report: {
+      strengths: [
+        "You made the difference between a deliverable and a milestone concrete by separating the report from its approval point.",
+        "Your explanation of sponsors and stakeholders gave Sam a practical way to think about who makes decisions and who is affected.",
+      ],
+      gaps: [{ concept: "Scope Creep", whatWasMissing: "The final question about a client request is still open, so Sam has not yet practised deciding what to do with a change.", tryNextTime: "Walk through one small change request: pause, check its impact, then decide how it enters the plan." }],
+      suggestedNextSession: "Start with Sam's question about the extra field, then compare a planned change with scope creep.",
+    },
   },
   {
     id: "number-quest",
@@ -79,21 +89,64 @@ const conversations: DemoConversation[] = [
       { role: "mentor", content: "It is the same amount when we split the same whole into smaller equal pieces. Two quarters cover the same half of one pizza, so the fractions are equivalent even though the numbers look different." },
       { role: "hire", content: "Right - the number of slices changes, but not the amount of pizza. I am still a little wobbly when the number line crosses below zero, though." },
     ],
+    report: {
+      strengths: [
+        "You used the number line as a clear visual reference, which helped Milo describe negative numbers without treating them as something bad.",
+        "The pizza example made equivalent fractions memorable and gave Milo words they can reuse with younger learners.",
+      ],
+      gaps: [{ concept: "Negative Numbers", whatWasMissing: "Milo can picture the two sides of zero, but still needs a chance to compare negative values with confidence.", tryNextTime: "Use a short temperature or lift-floor example and ask Milo to place a few values on the number line." }],
+      suggestedNextSession: "Let Milo lead a tiny Number Quest Club warm-up about values below zero, then revisit the tricky comparisons.",
+    },
   },
 ];
 
 export default function DemoOffice({ conversationId }: { conversationId: string }) {
   const [notebookOpen, setNotebookOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const conversation = conversations.find((item) => item.id === conversationId) ?? conversations[0];
+  const [messages, setMessages] = useState<DemoMessage[]>(conversation.messages);
+  const [draft, setDraft] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const [error, setError] = useState<string>();
   const initials = conversation.hire.name.slice(0, 2).toUpperCase();
+
+  useEffect(() => {
+    setMessages(conversation.messages);
+    setDraft("");
+    setThinking(false);
+    setError(undefined);
+    setNotebookOpen(false);
+    setReportOpen(false);
+  }, [conversation]);
+
+  async function sendDemoMessage(event: FormEvent) {
+    event.preventDefault();
+    const message = draft.trim();
+    if (!message || thinking) return;
+    setDraft("");
+    setError(undefined);
+    setMessages((current) => [...current, { role: "mentor", content: message }]);
+    setThinking(true);
+    try {
+      const response = await fetch("/api/demo/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversationId: conversation.id, message, history: messages }) });
+      const data = await response.json() as { hireReply?: string; error?: string };
+      if (!response.ok || !data.hireReply) throw new Error(data.error ?? "The demo office could not reply just now. Please try again.");
+      setMessages((current) => [...current, { role: "hire", content: data.hireReply as string }]);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The demo office could not reply just now. Please try again.");
+    } finally {
+      setThinking(false);
+    }
+  }
 
   return <main className="min-h-screen bg-white text-[#374151]">
     <header className="border-b border-[#F3F4F6] bg-white">
-      <div className="mx-auto max-w-6xl px-5 py-4 sm:px-8">
+      <div className="mx-auto flex max-w-6xl items-start justify-between gap-4 px-5 py-4 sm:px-8">
         <div>
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]"><Link href="/" className="text-[#4F46E5] transition hover:text-[#4338CA]">First Day</Link><span className="text-[#9CA3AF]">/</span><Link href="/demo" className="text-[#4F46E5] transition hover:text-[#4338CA]">Demo</Link></nav>
           <h1 className="font-display mt-2 text-2xl font-semibold text-[#111827]">{conversation.title}</h1>
         </div>
+        <button onClick={() => setReportOpen(true)} className="rounded-full px-3 py-2 text-sm font-semibold text-[#4F46E5] transition hover:bg-[#EEF2FF]">View report</button>
       </div>
       <nav aria-label="Demo conversations" className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-5 pb-4 sm:px-8">
         {conversations.map((item) => <Link key={item.id} href={`/demo/${item.id}`} className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${item.id === conversation.id ? "bg-[#4F46E5] text-white" : "bg-[#EEF2FF] text-[#4F46E5] hover:bg-indigo-100"}`}>{item.label} · {item.hire.name}</Link>)}
@@ -102,7 +155,7 @@ export default function DemoOffice({ conversationId }: { conversationId: string 
 
     <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
       <div className="mb-6 rounded-2xl border border-indigo-100 bg-[#EEF2FF] px-5 py-4 text-sm leading-6 text-indigo-900">
-        <span className="font-semibold">A finished office conversation.</span> {conversation.description} This read-only preview is separate from your onboarding desk and never changes your own new hire.
+        <span className="font-semibold">A finished office conversation.</span> {conversation.description} Continue the conversation with a real AI reply; messages are never saved to your onboarding desk.
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
@@ -112,12 +165,13 @@ export default function DemoOffice({ conversationId }: { conversationId: string 
             <p className="mt-1 text-xs text-slate-400">A completed example of a mentor helping a new hire think through a subject.</p>
           </div>
           <div role="log" className="flex-1 space-y-5 overflow-y-auto px-5 py-6 sm:px-6">
-            {conversation.messages.map((message, index) => <div key={index} className={`flex gap-3 ${message.role === "mentor" ? "justify-end" : "justify-start"}`}>
+            {messages.map((message, index) => <div key={index} className={`flex gap-3 ${message.role === "mentor" ? "justify-end" : "justify-start"}`}>
               {message.role === "hire" ? <div aria-hidden="true" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div> : null}
               <div className={`max-w-[84%] rounded-2xl px-4 py-3 text-sm leading-6 sm:max-w-[80%] ${message.role === "mentor" ? "rounded-br-md bg-[#4F46E5] text-white" : "rounded-bl-md border border-[#E5E7EB] bg-[#F9FAFB] text-[#374151]"}`}>{message.content}</div>
             </div>)}
           </div>
-          <div className="border-t border-[#F3F4F6] p-4"><div className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-4 py-3 text-sm text-[#6B7280]">This demo is read-only. Start your own subject to continue the conversation.</div></div>
+          {thinking ? <div className="mx-4 mb-1 flex items-center gap-3"><div aria-hidden="true" className="grid h-8 w-8 place-items-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div><div className="rounded-2xl rounded-bl-md border border-[#E5E7EB] bg-[#F9FAFB] px-4 py-3 text-sm text-[#6B7280]">{conversation.hire.name} is thinking...</div></div> : null}
+          <form onSubmit={(event) => void sendDemoMessage(event)} className="border-t border-[#F3F4F6] p-4"><div className="flex gap-3"><label className="sr-only" htmlFor="demo-explanation">Explain your answer</label><textarea id="demo-explanation" value={draft} onChange={(event) => setDraft(event.target.value)} disabled={thinking} rows={2} maxLength={6000} placeholder={`Explain it to ${conversation.hire.name}...`} className="min-h-[52px] flex-1 resize-none rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none transition focus:border-[#4F46E5] focus:ring-2 focus:ring-[#EEF2FF] disabled:bg-[#F9FAFB]" /><button type="submit" disabled={!draft.trim() || thinking} className="rounded-full bg-[#4F46E5] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4338CA] disabled:cursor-not-allowed disabled:opacity-40">Send</button></div><p className="mt-2 text-xs text-slate-400">Demo messages are not saved to your onboarding desk.</p>{error ? <p role="alert" className="mt-3 text-xs text-rose-600">{error}</p> : null}</form>
         </section>
 
         <aside className="space-y-6">
@@ -132,5 +186,6 @@ export default function DemoOffice({ conversationId }: { conversationId: string 
       </div>
     </div>
     {notebookOpen ? <NotebookPanel name={conversation.hire.name} concepts={conversation.concepts} onClose={() => setNotebookOpen(false)} /> : null}
+    {reportOpen ? <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/30 p-5 backdrop-blur-sm"><div className="mx-auto my-8 max-w-4xl rounded-2xl bg-white p-6 shadow-2xl sm:p-9"><div className="mb-8 flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">Demo teaching report</p><h2 className="font-display mt-2 text-3xl font-semibold text-[#111827]">Here&apos;s how your teaching went</h2><p className="mt-2 text-sm text-slate-500">A fixed report that belongs to this finished demo conversation.</p></div><button onClick={() => setReportOpen(false)} className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">Close</button></div><GapReport report={conversation.report} /></div></div> : null}
   </main>;
 }

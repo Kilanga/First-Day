@@ -13,11 +13,11 @@ export default function WelcomePage() {
           <span className="float-chip absolute bottom-16 right-[-4%] rounded-full border border-[#E5E7EB] bg-white px-3 py-2 text-xs font-medium text-[#374151] shadow-sm" style={{ animationDelay: "1.5s", "--chip-rotate": "-2deg" } as CSSProperties}>can I say it back?</span>
         </div>
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4F46E5]">First Day</p>
-        <h1 className="font-display mt-6 text-4xl font-semibold leading-[1.02] tracking-[-0.04em] text-[#111827] sm:text-7xl">Learn anything more deeply by explaining it.</h1>
-        <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-[#374151] sm:text-lg sm:leading-8">First Day gives you a curious new hire to teach. Their questions turn what you know into understanding, one idea at a time.</p>
+        <h1 className="font-display mt-6 text-4xl font-semibold leading-[1.02] tracking-[-0.04em] text-[#111827] sm:text-7xl">Learn anything more deeply by teaching it.</h1>
+        <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-[#374151] sm:text-lg sm:leading-8">Mentor your AI new hire on their first day. Their curious questions turn what you know into understanding, one idea at a time.</p>
         <div className="mx-auto mt-10 flex max-w-md flex-col justify-center gap-3 sm:max-w-none sm:flex-row">
           <DemoSubjectButton />
-          <Link href="/desk" className="button-primary">Open your onboarding desk</Link>
+          <Link href="/desk" className="button-secondary">Open your onboarding desk</Link>
         </div>
       </div>
 
