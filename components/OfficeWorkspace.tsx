@@ -16,6 +16,7 @@ type WorkspaceSubject = {
   concepts: SkillConcept[];
   progress?: { explored: number; mastered: number; toRevisit: number; total: number };
   activeSession: ActiveSession | null;
+  latestCompletedSession?: { id: string } | null;
 };
 type Props = { subjectId?: string; title: string; name: string; initialQuestion?: string };
 
@@ -139,7 +140,11 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
   }
 
   async function viewReport() {
-    if (!sessionId || loadingReport) return;
+    if (loadingReport) return;
+    if (!sessionId) {
+      if (currentSubject?.latestCompletedSession) router.push(`/report/${currentSubject.latestCompletedSession.id}`);
+      return;
+    }
     setLoadingReport(true);
     try {
       const response = await fetch("/api/session/end", {
@@ -169,7 +174,8 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <button onClick={() => router.push("/")} className="rounded-full px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Leave</button>
-            <button onClick={viewReport} disabled={loadingReport || !sessionId} className="rounded-full px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-[#EEF2FF] disabled:opacity-50">{loadingReport ? "Preparing..." : "View report"}</button>
+            <button onClick={viewReport} disabled={loadingReport || !currentSubject?.latestCompletedSession} title={!currentSubject?.latestCompletedSession ? "End the session to generate your first report." : undefined} className="rounded-full px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-[#EEF2FF] disabled:cursor-not-allowed disabled:opacity-50">{loadingReport ? "Preparing..." : "View report"}</button>
+            {(currentSubject?.progress?.explored ?? 0) >= 3 ? <button onClick={() => router.push(`/trial?subjectId=${currentSubject?.id}`)} className="rounded-full px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-[#EEF2FF]">Knowledge check</button> : null}
             <button onClick={() => setConfirmEnd(true)} disabled={ending || !sessionId} className="rounded-full border border-[#E5E7EB] px-4 py-2 text-sm font-semibold text-[#111827] hover:bg-[#F9FAFB] disabled:opacity-50">{ending ? "Ending..." : "End session"}</button>
           </div>
         </div>

@@ -13,6 +13,7 @@ export const runtime = "nodejs";
 
 const NAMES = ["Sam", "Alex", "Jordan", "Riley", "Casey", "Morgan", "Charlie", "Taylor", "Jamie", "Quinn"];
 const TRAITS = ["always taking notes on a battered notepad", "slightly too much coffee", "quotes a favorite teacher from time to time", "over-apologizes when confused", "gets visibly excited when something clicks", "keeps a list of 'questions I was afraid to ask'", "makes colourful revision cards", "compares everything to a film or book they loved"];
+const DEMO_SUBJECT_TITLE = "Project Management Fundamentals";
 type SubjectInput = { mentorId?: unknown; title?: unknown; notes?: unknown; focus?: unknown; demo?: unknown; files: File[] };
 const MAX_MULTIPART_BYTES = 4_500_000;
 
@@ -20,6 +21,13 @@ function pickTraits() { return [...TRAITS].sort(() => Math.random() - 0.5).slice
 function textField(value: FormDataEntryValue | null) { return typeof value === "string" ? value : undefined; }
 function isUploadedFile(value: FormDataEntryValue): value is File {
   return typeof value !== "string" && typeof value === "object" && value !== null && "arrayBuffer" in value && typeof value.arrayBuffer === "function";
+}
+
+function isStoredDemoSubject(subject: { generationInput: unknown; trapMap: unknown }) {
+  const generationInput = subject.generationInput as { demo?: unknown } | null;
+  const trapMap = subject.trapMap as Partial<TrapMap> | null;
+  return generationInput?.demo === true
+    || (trapMap?.subject === DEMO_SUBJECT_TITLE && trapMap.concepts?.some((concept) => concept.id === "milestone-vs-deliverable"));
 }
 
 async function readInput(request: Request): Promise<SubjectInput> {
@@ -63,7 +71,36 @@ export async function POST(request: Request) {
     if (!isDemo && !(await consumeAiActionQuota(mentorId, "subject"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
     const providedTitle = typeof body.title === "string" ? body.title.trim() : "";
     const mentor = await prisma.mentor.upsert({ where: { id: mentorId }, update: {}, create: { id: mentorId } });
-    const title = isDemo ? "Project Management Fundamentals" : providedTitle;
+    const title = isDemo ? DEMO_SUBJECT_TITLE : providedTitle;
+    if (isDemo) {
+      const existingSubjects = await prisma.subject.findMany({
+        where: { mentorId: mentor.id, title, generationStatus: "ready" },
+        orderBy: { createdAt: "desc" },
+        include: { hire: true },
+      });
+      const existingDemo = existingSubjects.find(isStoredDemoSubject);
+      if (existingDemo?.hire) {
+        const existingTrapMap = existingDemo.trapMap as unknown as TrapMap;
+        const response = NextResponse.json({
+          subjectId: existingDemo.id,
+          status: "ready",
+          hire: {
+            name: existingDemo.hire.name,
+            tier: existingDemo.hire.tier,
+            xp: existingDemo.hire.xp,
+            stats: {
+              comprehension: existingDemo.hire.statComprehension,
+              autonomy: existingDemo.hire.statAutonomy,
+              reflexes: existingDemo.hire.statReflexes,
+              confidence: existingDemo.hire.statConfidence,
+            },
+            personality: existingDemo.hire.personality,
+          },
+          firstQuestion: orderedConcepts(existingTrapMap)[0]?.misconceptions[0]?.naive_question,
+        });
+        return mentorSession.shouldIssueCookie ? issueMentorSession(response, mentorId) : response;
+      }
+    }
     const imported = isDemo ? { text: "", sources: [] as ImportedSource[] } : await extractSourceDocuments(body.files);
     const learningFocus = typeof body.focus === "string" ? body.focus.trim() : "";
     const promptSourceNotes = [learningFocus ? `LEARNING FOCUS: ${learningFocus}` : "", typeof body.notes === "string" ? body.notes.trim() : "", imported.text].filter(Boolean).join("\n\n");
@@ -77,6 +114,7 @@ export async function POST(request: Request) {
         sourceFiles: imported.sources.length ? imported.sources.map(({ type, characters }) => ({ type, characters })) as unknown as Prisma.InputJsonValue : undefined,
         trapMap: (trapMap ?? {}) as unknown as Prisma.InputJsonValue,
         generationStatus: isDemo ? "ready" : "preparing",
+        generationInput: isDemo ? { demo: true } as Prisma.InputJsonValue : undefined,
         ...(trapMap ? { learnerState: { create: trapMap.concepts.map((concept) => ({ conceptId: concept.id, status: "not_covered" })) } } : {}),
         hire: { create: { mentorId: mentor.id, name: NAMES[Math.floor(Math.random() * NAMES.length)], personality: personality as unknown as Prisma.InputJsonValue } },
       },

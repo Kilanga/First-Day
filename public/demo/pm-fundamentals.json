@@ -1,4 +1,131 @@
 {
   "subject": "Project Management Fundamentals",
-  "concepts": []
+  "concepts": [
+    {
+      "id": "milestone-vs-deliverable",
+      "name": "Milestones vs Deliverables",
+      "depends_on": [],
+      "core_idea": "A deliverable is a tangible output the project produces (a report, a feature, a building); a milestone is a point in time marking significant progress (deliverable approved, phase completed). Deliverables take effort; milestones have zero duration.",
+      "misconceptions": [
+        {
+          "id": "milestone-is-big-deliverable",
+          "wrong_belief": "A milestone is just a big deliverable.",
+          "naive_question": "So the final report is a milestone, right? Since it's a big important thing we have to finish?",
+          "why_it_matters": "Confusing them breaks schedules: milestones get duration assigned, deliverables get reduced to dates, and the plan stops reflecting real work."
+        },
+        {
+          "id": "milestone-takes-time",
+          "wrong_belief": "Milestones take time to complete.",
+          "naive_question": "How long should I plan for the 'design approved' milestone? Like, a week?",
+          "why_it_matters": "Assigning duration to milestones pads schedules with phantom time and hides where actual effort goes."
+        }
+      ]
+    },
+    {
+      "id": "stakeholder-vs-sponsor",
+      "name": "Stakeholders vs the Sponsor",
+      "depends_on": [],
+      "core_idea": "A stakeholder is anyone affected by or able to influence the project — users, teams, regulators, clients. The sponsor is one specific role: the person who owns the business case, secures funding, and has final authority on major decisions.",
+      "misconceptions": [
+        {
+          "id": "sponsor-is-managed-like-stakeholder",
+          "wrong_belief": "The sponsor is just the most important stakeholder, so managing them is the same job.",
+          "naive_question": "If I keep all the stakeholders happy, the sponsor is covered too, isn't he? He's one of them after all.",
+          "why_it_matters": "Sponsors need decisions escalated, not satisfaction managed; treating them as one voice among many leaves projects without an authority when trade-offs are needed."
+        },
+        {
+          "id": "stakeholders-are-supporters-only",
+          "wrong_belief": "Stakeholders are only the people who want the project to succeed.",
+          "naive_question": "Should I really invite the operations team to the review? They keep pushing back on everything, they're not really supporters.",
+          "why_it_matters": "Ignoring resistant or negatively-affected parties is the top source of late-stage blockers and rework."
+        }
+      ]
+    },
+    {
+      "id": "scope-creep",
+      "name": "Scope Creep",
+      "depends_on": ["milestone-vs-deliverable"],
+      "core_idea": "Scope creep is the gradual, uncontrolled expansion of what the project must deliver, without adjusting time, budget, or resources. The problem is not change itself — it's change that bypasses evaluation and formal approval.",
+      "misconceptions": [
+        {
+          "id": "small-additions-do-not-count",
+          "wrong_belief": "Small additions don't count as scope creep.",
+          "naive_question": "The client just wants one extra field on the form — that's not really a scope change, I can just add it, right?",
+          "why_it_matters": "Creep is precisely the accumulation of 'too small to count' additions; each one resets the baseline invisibly."
+        },
+        {
+          "id": "scope-control-refuses-all-changes",
+          "wrong_belief": "Refusing scope creep means refusing all changes.",
+          "naive_question": "So to be a good project manager I should basically say no to every new request?",
+          "why_it_matters": "Rigidity kills value; the skill is routing changes through impact assessment, not blocking them."
+        },
+        {
+          "id": "scope-creep-only-from-client",
+          "wrong_belief": "Scope creep comes only from the client.",
+          "naive_question": "As long as the client doesn't ask for more, we're safe from scope creep, right?",
+          "why_it_matters": "Gold-plating — the team adding unrequested polish — is internal scope creep and burns budget just the same."
+        }
+      ]
+    },
+    {
+      "id": "risk-vs-issue",
+      "name": "Risks vs Issues",
+      "depends_on": [],
+      "core_idea": "A risk is an uncertain event that MAY affect the project if it occurs — it is managed proactively (probability, impact, response plan). An issue is a problem that HAS already materialized — it is managed reactively (owner, action, resolution).",
+      "misconceptions": [
+        {
+          "id": "issue-is-severe-risk",
+          "wrong_belief": "Risks and issues are the same thing at different levels of severity.",
+          "naive_question": "So an issue is basically just a really serious risk?",
+          "why_it_matters": "Mixing them produces risk registers full of current problems nobody plans responses for, and issues nobody owns."
+        },
+        {
+          "id": "planned-risk-is-closed",
+          "wrong_belief": "A risk with a response plan is handled.",
+          "naive_question": "We wrote a mitigation for the vendor delay risk, so we can close it now, can't we?",
+          "why_it_matters": "Risks need monitoring until their window passes; 'planned' is not 'gone'."
+        }
+      ]
+    },
+    {
+      "id": "critical-path",
+      "name": "The Critical Path",
+      "depends_on": ["milestone-vs-deliverable"],
+      "core_idea": "The critical path is the longest chain of dependent tasks through the project; its total duration sets the minimum project duration. Any delay on a critical task delays the whole project. The critical path can change as work progresses.",
+      "misconceptions": [
+        {
+          "id": "non-critical-tasks-do-not-matter",
+          "wrong_belief": "Tasks not on the critical path don't really matter.",
+          "naive_question": "If only the critical path decides the end date, the other tasks are kind of optional for the deadline, right?",
+          "why_it_matters": "Non-critical tasks that slip enough BECOME critical; neglecting them is how projects grow new critical paths overnight."
+        },
+        {
+          "id": "critical-path-is-fixed",
+          "wrong_belief": "The critical path is fixed once planned.",
+          "naive_question": "We identified the critical path at kickoff, so now we just have to watch those tasks until the end?",
+          "why_it_matters": "Progress and delays reshuffle the network; yesterday's safe task can be today's bottleneck."
+        }
+      ]
+    },
+    {
+      "id": "float",
+      "name": "Float (Slack)",
+      "depends_on": ["critical-path"],
+      "core_idea": "Float is how long a task can be delayed without delaying the project (total float) or the next task (free float). Critical-path tasks have zero float. Float is a shared buffer across a chain, not a private allowance per task.",
+      "misconceptions": [
+        {
+          "id": "float-is-private-per-task",
+          "wrong_belief": "Float is spare time each task individually owns.",
+          "naive_question": "Task B has 5 days of float and task C has 5 days too, so together we have 10 days of margin on that branch?",
+          "why_it_matters": "Float is consumed chain-wide: the first task that slips eats everyone's buffer, and double-counting it hides real risk."
+        },
+        {
+          "id": "float-means-safe-to-deprioritize",
+          "wrong_belief": "Float means the task is safe to deprioritize.",
+          "naive_question": "Since that task has float, I can just tell the team to do it whenever they have time?",
+          "why_it_matters": "'Whenever' reliably becomes 'too late'; float is a management reserve, not permission to drift."
+        }
+      ]
+    }
+  ]
 }

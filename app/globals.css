@@ -14,8 +14,8 @@
 }
 
 .font-display { font-family: "Fraunces", Georgia, serif; }
-.surface-card { @apply rounded-2xl border border-[#F3F4F6] bg-white shadow-sm transition-shadow duration-200 hover:shadow-md; }
-.button-primary { @apply inline-flex items-center justify-center rounded-full bg-[#4F46E5] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4338CA] focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50; }
+.surface-card { @apply rounded-2xl border border-[#F3F4F6] bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md; }
+.button-primary { @apply inline-flex items-center justify-center rounded-full bg-[#4F46E5] px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition hover:bg-[#4338CA] focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50; }
 .button-secondary { @apply inline-flex items-center justify-center rounded-full border border-[#E5E7EB] bg-white px-6 py-3.5 text-sm font-semibold text-[#111827] transition hover:bg-[#F9FAFB] focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50; }
 /* Root pages fill the available space in the app shell; the legal footer then
    sits at the bottom of a short page instead of creating an extra viewport. */

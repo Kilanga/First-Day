@@ -77,6 +77,8 @@ corepack pnpm dev
 
 This project requires **pnpm 10 or newer** and **Node 22 or newer**. Vercel runs `pnpm build`, which runs `prisma migrate deploy`, generates Prisma Client, and builds Next.js; it therefore needs `DATABASE_URL`. Use `pnpm build:local` when you want the build without applying migrations locally.
 
+For local end-to-end checks without using OpenAI credits, set `OPENAI_MOCK_MODE=true`. The app then uses deterministic local responses for subject mapping, chat, reports, feedback, and knowledge checks; no OpenAI request is created.
+
 ## Privacy and deployment safeguards
 
 - Private onboarding data is protected by a signed, HTTP-only anonymous-session cookie. Use **Share this onboarding** rather than a report URL to share a reusable setup.
