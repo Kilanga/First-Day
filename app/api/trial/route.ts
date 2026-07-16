@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const { subjectId } = await request.json();
     const mentorId = requireMentorId(request);
     if (typeof subjectId !== "string") return NextResponse.json({ error: "subjectId is required." }, { status: 400 });
-    if (!(await consumeAiActionQuota(mentorId, "trial"))) return NextResponse.json({ error: "The study room is closed for today — come back tomorrow." }, { status: 429 });
+    if (!(await consumeAiActionQuota(mentorId, "trial"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
     const subject = await prisma.subject.findFirst({ where: { id: subjectId, mentorId }, include: { hire: true, learnerState: true } });
     if (!subject?.hire) return NextResponse.json({ error: "Subject not found." }, { status: 404 });
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
     const personality = Array.isArray(subject.hire.personality) ? subject.hire.personality.filter((item): item is string => typeof item === "string").join("; ") : "thoughtful and eager";
     const answerResult = await callJson<{ answers: TrialAnswer[] }>(
-      `You are ${subject.hire.name}, a curious study partner. Answer the supplied questions in character: motivated, polite, and a little hesitant when an idea is new. Personality: ${personality}. Return only JSON. For a mastered concept, answer correctly and concretely. For a partial concept, give a partly correct but incomplete answer. For a weak concept, visibly struggle or give a plausible wrong answer. Never mention tests, scores, concept statuses, evaluation, or AI.`,
+      `You are ${subject.hire.name}, a curious new hire. Answer the supplied questions in character: motivated, polite, and a little hesitant when an idea is new. Personality: ${personality}. Return only JSON. For a mastered concept, answer correctly and concretely. For a partial concept, give a partly correct but incomplete answer. For a weak concept, visibly struggle or give a plausible wrong answer. Never mention tests, scores, concept statuses, evaluation, or AI.`,
       JSON.stringify({ questions, hiddenStatuses: questions.map((question) => ({ conceptId: question.conceptId, status: stateById.get(question.conceptId) })) }),
       '{ "answers": [{ "conceptId": "string", "answer": "string" }] }',
     );

@@ -52,19 +52,20 @@ export async function orchestrateChat(input: ChatInput) {
     include: { hire: true, learnerState: true },
   });
   if (!subject?.hire) throw new Error("Subject or hire not found.");
+  const hire = subject.hire;
 
   const trapMap = asTrapMap(subject.trapMap);
   const agendaTargets = selectAgendaTargets(trapMap, subject.learnerState);
   const session = input.sessionId
     ? await prisma.learningSession.findFirst({ where: { id: input.sessionId, subjectId: subject.id } })
-    : await prisma.learningSession.create({ data: { subjectId: subject.id, agenda: { conceptIds: agendaTargets.map((concept) => concept.id) } } });
-  if (!session) throw new Error("Session not found.");
+    : undefined;
+  if (input.sessionId && !session) throw new Error("Session not found.");
 
-  const history = await prisma.message.findMany({
+  const history = session ? await prisma.message.findMany({
     where: { sessionId: session.id },
     orderBy: { createdAt: "desc" },
     take: 12,
-  });
+  }) : [];
   history.reverse();
 
   const priorHireQuestion = [...history].reverse().find((entry) => entry.role === "hire");
@@ -85,50 +86,24 @@ export async function orchestrateChat(input: ChatInput) {
   const verdictConceptId = currentTarget?.id ?? verdict.concept_id;
   const priorState = currentTarget ? subject.learnerState.find((state) => state.conceptId === currentTarget.id) : undefined;
   const breakthrough = priorState?.status === "weak" && stateStatus === "mastered";
-  const agendaValue = session.agenda as { conceptIds?: unknown } | null;
-  const agendaIds = Array.isArray(agendaValue?.conceptIds) ? agendaValue.conceptIds.filter((value): value is string => typeof value === "string") : [];
+  const agendaValue = session?.agenda as { conceptIds?: unknown } | null | undefined;
+  const agendaIds = Array.isArray(agendaValue?.conceptIds)
+    ? agendaValue.conceptIds.filter((value): value is string => typeof value === "string")
+    : agendaTargets.map((concept) => concept.id);
 
-  const updated = await prisma.$transaction(async (tx) => {
-    if (stateStatus && currentTarget) {
-      await tx.conceptState.update({
-        where: { subjectId_conceptId: { subjectId: subject.id, conceptId: currentTarget.id } },
-        data: { status: stateStatus, attempts: { increment: 1 } },
-      });
-    }
-    let nextHire = await tx.hire.update({
-      where: { id: subject.hire!.id },
-      data: {
-        xp: { increment: xp.xpDelta },
-        tier: xp.tier,
-        statComprehension: { increment: xp.statDeltas.comprehension },
-        statAutonomy: { increment: xp.statDeltas.autonomy },
-        statReflexes: { increment: xp.statDeltas.reflexes },
-      },
-    });
-    let agendaComplete = false;
-    if (agendaIds.length && !session.agendaBonusAwarded) {
-      const agendaStates = await tx.conceptState.findMany({ where: { subjectId: subject.id, conceptId: { in: agendaIds } } });
-      if (agendaStates.length === agendaIds.length && agendaStates.every((state) => state.status === "mastered")) {
-        const claimed = await tx.learningSession.updateMany({ where: { id: session.id, agendaBonusAwarded: false }, data: { agendaBonusAwarded: true } });
-        if (claimed.count) {
-          agendaComplete = true;
-          const totalXp = nextHire.xp + 15;
-          const tier = totalXp >= 151 ? "confirmed" : totalXp >= 51 ? "month1" : "week1";
-          nextHire = await tx.hire.update({ where: { id: nextHire.id }, data: { xp: { increment: 15 }, tier } });
-        }
-      }
-    }
-    return { hire: nextHire, agendaComplete };
-  });
-
-  const learnerState = await prisma.conceptState.findMany({ where: { subjectId: subject.id } });
-  const nextTarget = selectTarget(trapMap, learnerState);
+  // Keep the entire turn atomic: no XP, state, or message is stored until the
+  // hire has successfully produced a reply. Build the prompt from the projected
+  // state instead of writing the examiner result first.
+  const projectedLearnerState = subject.learnerState.map((state) => state.conceptId === currentTarget?.id && stateStatus
+    ? { ...state, status: stateStatus }
+    : state);
+  const nextTarget = selectTarget(trapMap, projectedLearnerState);
   const newHireSystem = newHireSystemPrompt({
-    name: updated.hire.name,
-    personality: Array.isArray(updated.hire.personality) ? updated.hire.personality.filter((value): value is string => typeof value === "string") : [],
+    name: hire.name,
+    personality: Array.isArray(hire.personality) ? hire.personality.filter((value): value is string => typeof value === "string") : [],
     trapMap,
-    learnerState,
-    memories: updated.hire.memories,
+    learnerState: projectedLearnerState,
+    memories: hire.memories,
     verdict,
     targetConceptId: nextTarget?.id,
     breakthrough,
@@ -138,32 +113,65 @@ export async function orchestrateChat(input: ChatInput) {
     { role: "user", content: input.message },
   ];
   const hireReply = await callText(newHireSystem, conversation);
-  await prisma.$transaction([
-    prisma.message.create({
+  const updated = await prisma.$transaction(async (tx) => {
+    const activeSession = session ?? await tx.learningSession.create({
+      data: { subjectId: subject.id, agenda: { conceptIds: agendaIds } },
+    });
+    if (stateStatus && currentTarget) {
+      await tx.conceptState.update({
+        where: { subjectId_conceptId: { subjectId: subject.id, conceptId: currentTarget.id } },
+        data: {
+          status: stateStatus,
+          attempts: { increment: 1 },
+          ...(stateStatus === "mastered" ? { notebookEntry: { text: notebookExcerpt(hireReply), createdAt: new Date().toISOString() } } : {}),
+        },
+      });
+    }
+    let nextHire = await tx.hire.update({
+      where: { id: hire.id },
       data: {
-        sessionId: session.id,
+        xp: { increment: xp.xpDelta },
+        tier: xp.tier,
+        statComprehension: { increment: xp.statDeltas.comprehension },
+        statAutonomy: { increment: xp.statDeltas.autonomy },
+        statReflexes: { increment: xp.statDeltas.reflexes },
+      },
+    });
+    let agendaComplete = false;
+    if (agendaIds.length && !activeSession.agendaBonusAwarded) {
+      const agendaStates = await tx.conceptState.findMany({ where: { subjectId: subject.id, conceptId: { in: agendaIds } } });
+      if (agendaStates.length === agendaIds.length && agendaStates.every((state) => state.status === "mastered")) {
+        const claimed = await tx.learningSession.updateMany({ where: { id: activeSession.id, agendaBonusAwarded: false }, data: { agendaBonusAwarded: true } });
+        if (claimed.count) {
+          agendaComplete = true;
+          const totalXp = nextHire.xp + 15;
+          const tier = totalXp >= 151 ? "confirmed" : totalXp >= 51 ? "month1" : "week1";
+          nextHire = await tx.hire.update({ where: { id: nextHire.id }, data: { xp: { increment: 15 }, tier } });
+        }
+      }
+    }
+    await tx.message.create({
+      data: {
+        sessionId: activeSession.id,
         role: "mentor",
         content: input.message,
         conceptId: verdictConceptId || null,
         verdict: verdict as unknown as Prisma.InputJsonValue,
       },
-    }),
-    prisma.message.create({
-      data: { sessionId: session.id, role: "hire", content: hireReply, conceptId: nextTarget?.id ?? null },
-    }),
-    ...(stateStatus === "mastered" && currentTarget ? [prisma.conceptState.update({
-      where: { subjectId_conceptId: { subjectId: subject.id, conceptId: currentTarget.id } },
-      data: { notebookEntry: { text: notebookExcerpt(hireReply), createdAt: new Date().toISOString() } },
-    })] : []),
-  ]);
+    });
+    await tx.message.create({
+      data: { sessionId: activeSession.id, role: "hire", content: hireReply, conceptId: nextTarget?.id ?? null },
+    });
+    return { hire: nextHire, agendaComplete, sessionId: activeSession.id };
+  });
 
   return {
-    sessionId: session.id,
+    sessionId: updated.sessionId,
     hireReply,
     teachingNote: mentorNote(verdict),
     xpDelta: xp.xpDelta + (updated.agendaComplete ? 15 : 0),
     statDeltas: xp.statDeltas,
-    tierUp: updated.hire.tier !== subject.hire.tier,
+    tierUp: updated.hire.tier !== hire.tier,
     breakthrough,
     agendaComplete: updated.agendaComplete,
     hire: {

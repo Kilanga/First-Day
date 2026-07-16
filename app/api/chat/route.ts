@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
     const mentorId = requireMentorId(request);
     if (!(await consumeMessageQuota(mentorId))) {
-      return NextResponse.json({ error: "The study room is closed for today — come back tomorrow." }, { status: 429 });
+      return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
     }
     chargedMentorId = mentorId;
     const result = await orchestrateChat({ ...body, mentorId });

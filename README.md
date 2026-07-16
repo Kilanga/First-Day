@@ -1,16 +1,16 @@
 # First Day
 
-First Day is a learning app that reverses the usual AI-tutor relationship. Instead of asking an AI for answers, a learner teaches a curious study partner. The partner asks plausible, strategically naive questions; explaining clearly is the learning exercise.
+First Day is a learning app that reverses the usual AI-tutor relationship. Instead of asking an AI for answers, a mentor teaches a curious new hire. The colleague asks plausible, strategically naive questions; explaining clearly is the learning exercise.
 
 The product is built around the protégé effect: people consolidate knowledge when they have to teach it. The goal is not to make the learner look clever. It is to make the mentor notice where an explanation is incomplete, vague, or missing a practical example.
 
 ## What the product does
 
-- Creates a subject from a title and optional study notes.
+- Creates a subject from a title and optional reference notes.
 - Accepts local Markdown, text, Word, PowerPoint, and text-based PDF documentation when creating a subject. When files are attached, the mentor must state a learning focus so the generated practice stays scoped to the relevant material; only extracted text is used and files are not retained.
 - Builds a private concept and misconception map for that subject.
-- Gives the subject a named study partner with a small, consistent personality.
-- Runs a teaching conversation, with the study partner asking the next useful question.
+- Gives the subject a named new hire with a small, consistent personality.
+- Runs a teaching conversation, with the new hire asking the next useful question.
 - Tracks what the colleague has genuinely understood, without revealing the hidden assessment system in the conversation.
 - Turns progress into in-character artifacts: a notebook, a session agenda, breakthrough moments, a journal entry, and a skills matrix.
 - Produces an end-of-session teaching report and a short 360-style note from the colleague.
@@ -37,7 +37,7 @@ The conversation loop is deliberately split into distinct responsibilities.
 1. The subject route creates the mentor, subject, hire, and one `ConceptState` per generated concept. For uploaded documents, it treats the mentor's stated learning focus as the highest-priority instruction.
 2. The Examiner evaluates the mentor's latest explanation privately and returns structured data for backend updates.
 3. The orchestrator updates concept state, XP, tiers, skills, the session agenda, and breakthrough state.
-4. The New Hire receives the private learning state and speaks only as the junior colleague. It never exposes the concept map, scores, verdicts, or evaluation process.
+4. The New Hire receives the private onboarding state and speaks only as the junior colleague. It never exposes the concept map, scores, verdicts, or evaluation process.
 5. The report route turns private notes into mentor-facing strengths and concrete next steps. It also stores an in-character journal entry.
 
 All OpenAI access goes through [`lib/openai.ts`](./lib/openai.ts). JSON calls request structured output, parse it strictly, retry once after malformed JSON, and fail safely through the API route rather than crashing the UI.
@@ -102,7 +102,7 @@ The model is therefore used for language, misconception design, and character ex
 6. **Production hardening:** Vercel build fixes, migration deployment, input-size limits, bounded state payloads, retry/error messaging, and build verification.
 7. **Reusable learning:** local-document focus prompts and shareable learning links with isolated recipient state.
 8. **Finishing pass:** keyboard-friendly chat controls, accessible live updates, resilient retry states, mobile-safe action bars, and clearer shared-learning handoff.
-9. **Guided continuity:** a no-API “I’m stuck” explanation scaffold, next-focus and latest-win cues on the learning desk, and an onboarding preview of the learning flow.
+9. **Guided continuity:** a no-API “I’m stuck” explanation scaffold, next-focus and latest-win cues on the onboarding desk, and an onboarding preview of the learning flow.
 10. **Mentor handoff:** private browser-only teaching checklists, Markdown report export, scoped document focus, and content-free operational logs for Vercel diagnostics.
 
 ## Local development
@@ -128,17 +128,17 @@ corepack pnpm exec prisma migrate dev --name init
 corepack pnpm dev
 ```
 
-For production, Vercel runs the `build` script, which deploys Prisma migrations, generates Prisma Client, and builds Next.js.
+This project requires **pnpm 10 or newer** and **Node 22 or newer**. For production, Vercel runs the `build` script, which runs `prisma migrate deploy`, generates Prisma Client, and builds Next.js. It therefore requires `DATABASE_URL` during the build. Use `pnpm build:local` when you want the same build without applying migrations locally.
 
 ## Privacy and deployment safeguards
 
-- Private learning data is protected by a signed, HTTP-only anonymous-session cookie. Never share a report URL as a way to share a learning; use **Share this learning** instead.
+- Private onboarding data is protected by a signed, HTTP-only anonymous-session cookie. Never share a report URL as a way to share an onboarding plan; use **Share this learning** instead.
 - The application sends security headers for content isolation, clickjacking protection, referrer minimisation, and restricted browser permissions.
 - Imported document text is transient: it is sent once to generate the trap map and is not retained. Do not upload confidential material unless your OpenAI and data-handling policies permit it.
-- The application includes `/privacy`, `/terms`, and `/legal`, together with a **Delete my data** control on the learning desk. Before any public launch, configure the publisher name and legal contact in Vercel; legal text is a practical starting point, not legal advice.
+- The application includes `/privacy`, `/terms`, and `/legal`, together with a **Delete my data** control on the onboarding desk. Before any public launch, configure the publisher name and legal contact in Vercel; legal text is a practical starting point, not legal advice.
 - Shared-learning links are bearer links: anyone with the link can open the reusable template. Do not share confidential material through them.
 - Set `MENTOR_SESSION_SECRET` in Vercel before deploying this version. Use a unique random value of at least 32 characters. Configure Neon with its pooled connection URL for production traffic.
-- The app pins Node 24 and pnpm 10 for Vercel compatibility. Database indexes cover the main dashboard, session-history, and message-history queries.
+- The app requires Node 22+ and pnpm 10+ for Vercel compatibility. Database indexes cover the main dashboard, session-history, and message-history queries.
 - OpenAI calls time out after 45 seconds by default, and public subject creation has both per-mentor and hashed per-IP hourly limits. Keep Vercel Firewall enabled as a second layer in production.
 - Operational logs record route outcome and duration only. They deliberately exclude mentor IDs, prompts, messages, source filenames, document text, and model output.
 

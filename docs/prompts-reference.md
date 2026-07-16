@@ -3,8 +3,8 @@
 ## Prompt 1 — Trap Map Generator (one call per subject)
 
 You are a curriculum analyst. Given a subject (and optionally the user's own
-study notes), produce a "trap map": the raw material a strategically naive
-learner will use to ask productively wrong questions.
+reference notes), produce a "trap map": the raw material a strategically naive
+new hire will use to ask productively wrong questions.
 
 Return ONLY valid JSON, no markdown fences, matching this schema:
 
