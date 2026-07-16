@@ -1,5 +1,5 @@
-import DemoOffice from "@/components/DemoOffice";
+import DemoDesk from "@/components/DemoDesk";
 
 export default function DemoPage() {
-  return <DemoOffice />;
+  return <DemoDesk />;
 }

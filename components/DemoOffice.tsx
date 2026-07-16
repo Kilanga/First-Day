@@ -82,23 +82,21 @@ const conversations: DemoConversation[] = [
   },
 ];
 
-export default function DemoOffice() {
-  const [activeId, setActiveId] = useState(conversations[0].id);
+export default function DemoOffice({ conversationId }: { conversationId: string }) {
   const [notebookOpen, setNotebookOpen] = useState(false);
-  const conversation = conversations.find((item) => item.id === activeId) ?? conversations[0];
+  const conversation = conversations.find((item) => item.id === conversationId) ?? conversations[0];
   const initials = conversation.hire.name.slice(0, 2).toUpperCase();
 
   return <main className="min-h-screen bg-white text-[#374151]">
     <header className="border-b border-[#F3F4F6] bg-white">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
+      <div className="mx-auto max-w-6xl px-5 py-4 sm:px-8">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">First Day &middot; Demo</p>
-          <h1 className="font-display mt-1 text-2xl font-semibold text-[#111827]">{conversation.title}</h1>
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]"><Link href="/" className="text-[#4F46E5] transition hover:text-[#4338CA]">First Day</Link><span className="text-[#9CA3AF]">/</span><Link href="/demo" className="text-[#4F46E5] transition hover:text-[#4338CA]">Demo</Link></nav>
+          <h1 className="font-display mt-2 text-2xl font-semibold text-[#111827]">{conversation.title}</h1>
         </div>
-        <Link href="/" className="button-secondary !px-4 !py-2.5">Back to welcome</Link>
       </div>
       <nav aria-label="Demo conversations" className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-5 pb-4 sm:px-8">
-        {conversations.map((item) => <button key={item.id} onClick={() => { setActiveId(item.id); setNotebookOpen(false); }} className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${item.id === conversation.id ? "bg-[#4F46E5] text-white" : "bg-[#EEF2FF] text-[#4F46E5] hover:bg-indigo-100"}`}>{item.label}</button>)}
+        {conversations.map((item) => <Link key={item.id} href={`/demo/${item.id}`} className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${item.id === conversation.id ? "bg-[#4F46E5] text-white" : "bg-[#EEF2FF] text-[#4F46E5] hover:bg-indigo-100"}`}>{item.label} · {item.hire.name}</Link>)}
       </nav>
     </header>
 

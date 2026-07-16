@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
-import DemoSubjectButton from "./DemoSubjectButton";
-import EdtechIcon from "./EdtechIcon";
+import { useCallback, useEffect, useState } from "react";
 import { tierLabel } from "./HireCard";
 import LearningHistory from "./LearningHistory";
 import ShareSubjectButton from "./ShareSubjectButton";
@@ -35,58 +33,9 @@ const latestAcquired = (subject: Subject) => [...subject.concepts]
   .filter((item) => item.masteredAt)
   .sort((a, b) => (b.masteredAt ?? "").localeCompare(a.masteredAt ?? ""))[0];
 
-function Welcome({ hasSubjects, onOpenDesk, onDelete, deleting }: {
-  hasSubjects: boolean;
-  onOpenDesk: () => void;
-  onDelete: () => void;
-  deleting: boolean;
-}) {
-  return <main className="min-h-screen bg-white px-5 py-16 sm:px-8 sm:py-24">
-    <div className="mx-auto max-w-5xl text-center">
-      <div className="relative mx-auto max-w-4xl">
-        <div className="pointer-events-none absolute inset-0 hidden lg:block" aria-hidden="true">
-          <span className="float-chip absolute left-[-8%] top-24 rounded-full border border-[#E5E7EB] bg-white px-3 py-2 text-xs font-medium text-[#374151] shadow-sm" style={{ "--chip-rotate": "-3deg" } as CSSProperties}>wait - float isn't slack?</span>
-          <span className="float-chip absolute right-[-11%] top-36 rounded-full border border-[#E5E7EB] bg-white px-3 py-2 text-xs font-medium text-[#374151] shadow-sm" style={{ animationDelay: "1s", "--chip-rotate": "3deg" } as CSSProperties}>so the critical path can change?</span>
-          <span className="float-chip absolute bottom-16 right-[-4%] rounded-full bg-[#EEF2FF] px-3 py-2 text-xs font-semibold text-[#4F46E5] shadow-sm" style={{ animationDelay: "1.5s", "--chip-rotate": "-2deg" } as CSSProperties}>+10 XP</span>
-        </div>
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4F46E5]">First Day</p>
-        <h1 className="font-display mt-6 text-4xl font-semibold leading-[1.02] tracking-[-0.04em] text-[#111827] sm:text-7xl">You only truly know what you can explain to a new hire.</h1>
-        <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-[#374151] sm:text-lg sm:leading-8">The prot&eacute;g&eacute; effect turns teaching into one of the fastest ways to consolidate knowledge. First Day inverts the AI tutor: you learn alongside a curious colleague instead.</p>
-        <p className="mt-5 text-sm text-[#6B7280]">{hasSubjects ? "Your colleagues are waiting at the onboarding desk." : "Your onboarding desk is ready for its first subject."}</p>
-        <div className="mx-auto mt-10 flex max-w-md flex-col justify-center gap-3 sm:max-w-none sm:flex-row">
-          <DemoSubjectButton />
-          <Link href="/onboarding" className="button-secondary">Teach your own subject</Link>
-          {hasSubjects ? <button onClick={onOpenDesk} className="button-secondary">Open your onboarding desk</button> : null}
-        </div>
-      </div>
-
-      <section className="mx-auto mt-20 grid max-w-4xl gap-8 text-left sm:grid-cols-3">
-        <div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#EEF2FF] text-[#4F46E5]"><EdtechIcon name="spark" className="h-5 w-5" /></span>
-          <h2 className="font-display mt-4 text-2xl font-semibold text-[#111827]">Explain</h2>
-          <p className="mt-2 text-sm leading-6 text-[#6B7280]">Put an idea into your own words, with the detail and examples that make it clear.</p>
-        </div>
-        <div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#FFF7ED] text-[#F97316]"><EdtechIcon name="message" className="h-5 w-5" /></span>
-          <h2 className="font-display mt-4 text-2xl font-semibold text-[#111827]">They question</h2>
-          <p className="mt-2 text-sm leading-6 text-[#6B7280]">Your colleague asks the next useful question, just like a thoughtful new hire would.</p>
-        </div>
-        <div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#ECFDF5] text-[#10B981]"><EdtechIcon name="growth" className="h-5 w-5" /></span>
-          <h2 className="font-display mt-4 text-2xl font-semibold text-[#111827]">Watch them grow</h2>
-          <p className="mt-2 text-sm leading-6 text-[#6B7280]">See what is taking shape through their own words, notes, and office plan.</p>
-        </div>
-      </section>
-
-      {!hasSubjects ? <button onClick={onDelete} disabled={deleting} className="mt-16 text-sm font-medium text-[#6B7280] hover:text-rose-700 disabled:opacity-50">{deleting ? "Deleting your data..." : "Delete my data"}</button> : null}
-    </div>
-  </main>;
-}
-
 export default function Dashboard() {
   const router = useRouter();
   const [subjects, setSubjects] = useState<Subject[]>();
-  const [showDesk, setShowDesk] = useState(false);
   const [deletingId, setDeletingId] = useState<string>();
   const [deletingDesk, setDeletingDesk] = useState(false);
   const [retryingId, setRetryingId] = useState<string>();
@@ -156,21 +105,23 @@ export default function Dashboard() {
   }
 
   if (!subjects) return <main className="grid min-h-screen place-items-center bg-white px-5 text-[#374151]"><div className="flex items-center gap-3 text-sm font-medium"><span className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-200 border-t-[#4F46E5]" />Opening your onboarding desk...</div></main>;
-  if (!subjects.length || !showDesk) return <Welcome hasSubjects={subjects.length > 0} onOpenDesk={() => setShowDesk(true)} onDelete={() => void removeDesk()} deleting={deletingDesk} />;
 
   return <main className="min-h-screen bg-white px-5 py-12 sm:px-8 sm:py-16">
     <div className="mx-auto max-w-5xl">
-      <div className="flex flex-wrap items-end justify-between gap-5">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]">
+        <Link href="/" className="text-[#4F46E5] transition hover:text-[#4338CA]">First Day</Link><span className="text-[#9CA3AF]">/</span><span className="text-[#6B7280]">Onboarding desk</span>
+      </nav>
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-5">
         <div>
-          <button onClick={() => setShowDesk(false)} className="text-sm font-semibold text-[#4F46E5] hover:text-[#4338CA]">&larr; Back to welcome</button>
-          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-[#4F46E5]">First Day</p>
-          <h1 className="font-display mt-3 text-4xl font-semibold tracking-[-0.03em] text-[#111827]">Your onboarding desk</h1>
+          <h1 className="font-display text-4xl font-semibold tracking-[-0.03em] text-[#111827]">Your onboarding desk</h1>
           <p className="mt-3 text-[#374151]">Return to an active office conversation, review a completed session, or bring a new subject to the office.</p>
         </div>
-        <Link href="/onboarding" className="button-primary">Teach a new subject</Link>
+        <Link href="/onboarding" className="button-primary">Create a new subject</Link>
       </div>
 
-      <section className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {!subjects.length ? <section className="surface-card mt-12 p-8 text-center"><h2 className="font-display text-2xl font-semibold text-[#111827]">No colleagues are waiting yet</h2><p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[#6B7280]">Give a new hire a subject, then they will be ready for their first office conversation.</p><Link href="/onboarding" className="button-primary mt-6">Create a new subject</Link></section> : null}
+
+      {subjects.length ? <section className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {subjects.map((subject) => {
           const focus = nextFocus(subject);
           const acquired = latestAcquired(subject);
@@ -191,7 +142,7 @@ export default function Dashboard() {
             <button onClick={() => void remove(subject)} disabled={Boolean(deletingId)} className="mt-5 text-sm font-medium text-[#6B7280] hover:text-rose-700 disabled:opacity-50">{deletingId === subject.id ? "Deleting..." : "Delete onboarding"}</button>
           </article>;
         })}
-      </section>
+      </section> : null}
 
       <section className="surface-card mt-12 p-6">
         <h2 className="font-display text-2xl font-semibold text-[#111827]">Privacy controls</h2>

@@ -173,15 +173,14 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
             <h1 className="font-display mt-1 text-2xl font-semibold text-[#111827]">{currentTitle}</h1>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-            <button onClick={() => router.push("/")} className="rounded-full px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Leave</button>
+            <button onClick={() => router.push("/desk")} className="rounded-full px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Onboarding desk</button>
             <button onClick={viewReport} disabled={loadingReport || !currentSubject?.latestCompletedSession} title={!currentSubject?.latestCompletedSession ? "End the session to generate your first report." : undefined} className="rounded-full px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-[#EEF2FF] disabled:cursor-not-allowed disabled:opacity-50">{loadingReport ? "Preparing..." : "View report"}</button>
-            {(currentSubject?.progress?.explored ?? 0) >= 3 ? <button onClick={() => router.push(`/trial?subjectId=${currentSubject?.id}`)} className="rounded-full px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-[#EEF2FF]">Knowledge check</button> : null}
+            {(currentSubject?.progress?.explored ?? 0) >= 3 ? <button onClick={() => router.push(`/trial?subjectId=${currentSubject?.id}`)} title="Watch your colleague apply what you taught without help." className="rounded-full px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-[#EEF2FF]">Knowledge check</button> : null}
             <button onClick={() => setConfirmEnd(true)} disabled={ending || !sessionId} className="rounded-full border border-[#E5E7EB] px-4 py-2 text-sm font-semibold text-[#111827] hover:bg-[#F9FAFB] disabled:opacity-50">{ending ? "Ending..." : "End session"}</button>
           </div>
         </div>
         <nav className="mt-4 flex gap-2 overflow-x-auto pb-1">
           {subjects.map((subject) => <button key={subject.id} onClick={() => router.push(subjectUrl(subject))} className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${subject.id === subjectId ? "bg-[#4F46E5] text-white" : "bg-[#EEF2FF] text-[#4F46E5] hover:bg-indigo-100"}`}>{subject.title} - {subject.hire.name}{subject.activeSession ? <span className="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-current align-middle" /> : null}</button>)}
-          <button onClick={() => router.push("/onboarding")} className="shrink-0 rounded-full border border-dashed border-indigo-300 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-[#EEF2FF]">+ New subject</button>
         </nav>
       </div>
     </header>
