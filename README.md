@@ -2,6 +2,8 @@
 
 First Day is a learning app that reverses the usual AI-tutor relationship. Instead of asking an AI for answers, you teach a believable new hire. Your colleague asks strategically naive questions; explaining clearly is the exercise.
 
+This repository contains the complete, runnable Build Week project. The quickest way to evaluate it is the production demo or the **Manual test flow** below; the demo includes sample conversations and a live, ephemeral GPT-5.6 follow-up.
+
 The product is built around the protégé effect: people consolidate knowledge when they have to teach it. The goal is not to make the new hire look clever. It is to make the mentor notice where an explanation is incomplete, vague, or missing a practical example.
 
 ## Why it stands out
@@ -112,3 +114,7 @@ For local end-to-end checks without using OpenAI credits, set `OPENAI_MOCK_MODE=
 - The demo has fixed starting content. Its chat is ephemeral: it uses GPT-5.6 but never becomes a user session or writes a message to the database.
 - No external documentation connectors in v1.
 - Sharing is anonymous and link-based; it is for reusable onboarding setups, not live collaboration.
+
+## License
+
+First Day is released under the [MIT License](./LICENSE).
