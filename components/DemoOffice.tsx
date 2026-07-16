@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type FormEvent, useEffect, useState } from "react";
 import GapReport, { type Report } from "./GapReport";
 import HireCard from "./HireCard";
+import FocusDialog from "./FocusDialog";
 import type { HireView, SkillConcept } from "@/lib/officeTypes";
 import NotebookPanel from "./NotebookPanel";
 import demoTrapMap from "@/public/demo/pm-fundamentals.json";
@@ -142,15 +143,15 @@ export default function DemoOffice({ conversationId }: { conversationId: string 
 
   return <main className="min-h-screen bg-white text-[#374151]">
     <header className="border-b border-[#F3F4F6] bg-white">
-      <div className="mx-auto flex max-w-6xl items-start justify-between gap-4 px-5 py-4 sm:px-8">
+      <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-5 py-4 sm:flex-row sm:px-8">
         <div>
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]"><Link href="/" className="text-[#4F46E5] transition hover:text-[#4338CA]">First Day</Link><span className="text-[#9CA3AF]">/</span><Link href="/demo" className="text-[#4F46E5] transition hover:text-[#4338CA]">Demo</Link></nav>
           <h1 className="font-display mt-2 text-2xl font-semibold text-[#111827]">{conversation.title}</h1>
         </div>
-        <button onClick={() => setReportOpen(true)} className="rounded-full px-3 py-2 text-sm font-semibold text-[#4F46E5] transition hover:bg-[#EEF2FF]">View report</button>
+        <button onClick={() => setReportOpen(true)} className="touch-target rounded-full px-3 py-2 text-sm font-semibold text-[#4F46E5] transition hover:bg-[#EEF2FF]">View report</button>
       </div>
       <nav aria-label="Demo conversations" className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-5 pb-4 sm:px-8">
-        {conversations.map((item) => <Link key={item.id} href={`/demo/${item.id}`} className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${item.id === conversation.id ? "bg-[#4F46E5] text-white" : "bg-[#EEF2FF] text-[#4F46E5] hover:bg-indigo-100"}`}>{item.label} · {item.hire.name}</Link>)}
+        {conversations.map((item) => <Link key={item.id} href={`/demo/${item.id}`} className={`touch-target shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${item.id === conversation.id ? "bg-[#4F46E5] text-white" : "bg-[#EEF2FF] text-[#4F46E5] hover:bg-indigo-100"}`}>{item.label} · {item.hire.name}</Link>)}
       </nav>
     </header>
 
@@ -160,19 +161,19 @@ export default function DemoOffice({ conversationId }: { conversationId: string 
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-        <section aria-label="Demo conversation" className="surface-card flex min-h-[620px] flex-col">
+        <section aria-label="Demo conversation" className="surface-card flex h-[min(640px,calc(100dvh-7rem))] min-h-[420px] flex-col sm:h-auto sm:min-h-[620px]">
           <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
             <p className="text-sm font-medium text-slate-500">Office conversation</p>
-            <p className="mt-1 text-xs text-slate-400">A completed example of a mentor helping a new hire think through a subject.</p>
+            <p className="mt-1 text-xs text-slate-500">A completed example of a mentor helping a new hire think through a subject.</p>
           </div>
-          <div role="log" className="flex-1 space-y-5 overflow-y-auto px-5 py-6 sm:px-6">
+          <div role="log" aria-live="polite" aria-relevant="additions text" className="flex-1 space-y-5 overflow-y-auto px-5 py-6 sm:px-6">
             {messages.map((message, index) => <div key={index} className={`flex gap-3 ${message.role === "mentor" ? "justify-end" : "justify-start"}`}>
               {message.role === "hire" ? <div aria-hidden="true" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div> : null}
               <div className={`max-w-[84%] rounded-2xl px-4 py-3 text-sm leading-6 sm:max-w-[80%] ${message.role === "mentor" ? "rounded-br-md bg-[#4F46E5] text-white" : "rounded-bl-md border border-[#E5E7EB] bg-[#F9FAFB] text-[#374151]"}`}>{message.content}</div>
             </div>)}
           </div>
           {thinking ? <div className="mx-4 mb-1 flex items-center gap-3"><div aria-hidden="true" className="grid h-8 w-8 place-items-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div><div className="rounded-2xl rounded-bl-md border border-[#E5E7EB] bg-[#F9FAFB] px-4 py-3 text-sm text-[#6B7280]">{conversation.hire.name} is thinking...</div></div> : null}
-          <form onSubmit={(event) => void sendDemoMessage(event)} className="border-t border-[#F3F4F6] p-4"><div className="flex gap-3"><label className="sr-only" htmlFor="demo-explanation">Explain your answer</label><textarea id="demo-explanation" value={draft} onChange={(event) => setDraft(event.target.value)} disabled={thinking} rows={2} maxLength={6000} placeholder={`Explain it to ${conversation.hire.name}...`} className="min-h-[52px] flex-1 resize-none rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none transition focus:border-[#4F46E5] focus:ring-2 focus:ring-[#EEF2FF] disabled:bg-[#F9FAFB]" /><button type="submit" disabled={!draft.trim() || thinking} className="rounded-full bg-[#4F46E5] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4338CA] disabled:cursor-not-allowed disabled:opacity-40">Send</button></div><p className="mt-2 text-xs text-slate-400">Demo messages are not saved to your onboarding desk.</p>{error ? <p role="alert" className="mt-3 text-xs text-rose-600">{error}</p> : null}</form>
+          <form onSubmit={(event) => void sendDemoMessage(event)} className="border-t border-[#F3F4F6] p-4"><div className="flex gap-3"><label className="sr-only" htmlFor="demo-explanation">Explain your answer</label><textarea id="demo-explanation" value={draft} onChange={(event) => setDraft(event.target.value)} disabled={thinking} rows={2} maxLength={6000} placeholder={`Explain it to ${conversation.hire.name}...`} className="min-h-[52px] flex-1 resize-none rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none transition focus:border-[#4F46E5] focus:ring-2 focus:ring-[#EEF2FF] disabled:bg-[#F9FAFB]" /><button type="submit" disabled={!draft.trim() || thinking} className="touch-target rounded-full bg-[#4F46E5] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4338CA] disabled:cursor-not-allowed disabled:opacity-40">Send</button></div><p className="mt-2 text-xs text-slate-500">Demo messages are not saved to your onboarding desk.</p>{error ? <p role="alert" className="mt-3 text-xs text-rose-600">{error}</p> : null}</form>
         </section>
 
         <aside className="space-y-6">
@@ -187,6 +188,6 @@ export default function DemoOffice({ conversationId }: { conversationId: string 
       </div>
     </div>
     {notebookOpen ? <NotebookPanel name={conversation.hire.name} concepts={conversation.concepts} onClose={() => setNotebookOpen(false)} /> : null}
-    {reportOpen ? <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/30 p-5 backdrop-blur-sm"><div className="mx-auto my-8 max-w-4xl rounded-2xl bg-white p-6 shadow-2xl sm:p-9"><div className="mb-8 flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">Demo teaching report</p><h2 className="font-display mt-2 text-3xl font-semibold text-[#111827]">Here&apos;s how your teaching went</h2><p className="mt-2 text-sm text-slate-500">A fixed report that belongs to this finished demo conversation.</p></div><button onClick={() => setReportOpen(false)} className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">Close</button></div><GapReport report={conversation.report} /></div></div> : null}
+    {reportOpen ? <FocusDialog ariaLabel="Demo teaching report" onClose={() => setReportOpen(false)} className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/30 p-5 backdrop-blur-sm"><div className="mx-auto my-8 max-w-4xl rounded-2xl bg-white p-6 shadow-2xl sm:p-9"><div className="mb-8 flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">Demo teaching report</p><h2 className="font-display mt-2 text-3xl font-semibold text-[#111827]">Here&apos;s how your teaching went</h2><p className="mt-2 text-sm text-slate-500">A fixed report that belongs to this finished demo conversation.</p></div><button onClick={() => setReportOpen(false)} className="touch-target rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">Close</button></div><GapReport report={conversation.report} /></div></FocusDialog> : null}
   </main>;
 }

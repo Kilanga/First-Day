@@ -169,14 +169,14 @@ export default function ChatWindow({
   const initials = hire.name.slice(0, 2).toUpperCase();
 
   return (
-    <section aria-label="Mentor conversation" className="surface-card flex min-h-[520px] flex-col">
+    <section aria-label="Mentor conversation" className="surface-card flex h-[min(640px,calc(100dvh-7rem))] min-h-[420px] flex-col sm:h-auto sm:min-h-[520px]">
       <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
         <p className="text-sm font-medium text-slate-500">Office conversation</p>
-        <p className="mt-1 text-xs text-slate-400">Explain in your own words. Your colleague will ask the next question.</p>
+        <p className="mt-1 text-xs text-slate-500">Explain in your own words. Your colleague will ask the next question.</p>
       </div>
 
       <div role="log" aria-live="polite" aria-relevant="additions text" className="flex-1 space-y-5 overflow-y-auto px-5 py-6 sm:px-6">
-        {messages.length === 0 ? <p className="pt-20 text-center text-sm text-slate-400">Your new hire is ready when you are.</p> : null}
+        {messages.length === 0 ? <p className="pt-20 text-center text-sm text-slate-500">Your new hire is ready when you are.</p> : null}
 
         {messages.map((message) => {
           const isMentor = message.role === "mentor";
@@ -235,7 +235,7 @@ export default function ChatWindow({
           </button>
         </div>
 
-        <div className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-slate-400">
+        <div className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-slate-500">
           <p id="mentor-explanation-help">Press Ctrl/Cmd + Enter to send</p>
           <p id="mentor-explanation-count">{draft.length.toLocaleString()} / 6,000</p>
         </div>

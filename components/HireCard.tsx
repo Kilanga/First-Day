@@ -112,7 +112,7 @@ export default function HireCard({
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-800">Concept map</h3>
-          <span className="text-xs text-slate-400">Current picture</span>
+          <span className="text-xs text-slate-500">Current picture</span>
         </div>
         {concepts.length ? (
           <div className="space-y-2">
@@ -127,7 +127,7 @@ export default function HireCard({
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-400">Concepts will take shape as your new hire works through them.</p>
+          <p className="text-xs text-slate-500">Concepts will take shape as your new hire works through them.</p>
         )}
       </section>
 

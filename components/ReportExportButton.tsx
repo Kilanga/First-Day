@@ -14,5 +14,5 @@ export default function ReportExportButton({ sessionId }: { sessionId: string })
       const anchor = document.createElement("a"); anchor.href = url; anchor.download = "first-day-report.md"; anchor.click(); URL.revokeObjectURL(url);
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to export this report."); }
   }
-  return <div><button onClick={() => void download()} className="rounded-xl border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">Download Markdown</button>{error ? <p role="alert" className="mt-2 text-xs text-rose-700">{error}</p> : null}</div>;
+  return <div><button onClick={() => void download()} className="touch-target rounded-xl border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">Download Markdown</button>{error ? <p role="alert" className="mt-2 text-xs text-rose-700">{error}</p> : null}</div>;
 }

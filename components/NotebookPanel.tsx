@@ -1,6 +1,7 @@
 "use client";
 
 import type { SkillConcept } from "@/lib/officeTypes";
+import FocusDialog from "./FocusDialog";
 
 type NotebookEntry = {
   label: string;
@@ -65,10 +66,9 @@ type NotebookPanelProps = {
 
 export default function NotebookPanel({ name, concepts, onClose }: NotebookPanelProps) {
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`${name}'s field notes`}
+    <FocusDialog
+      ariaLabel={`${name}'s field notes`}
+      onClose={onClose}
       className="fixed inset-0 z-50 bg-slate-950/25 backdrop-blur-sm"
     >
       <aside className="ml-auto flex h-full w-full max-w-md flex-col overflow-y-auto bg-white p-6 shadow-2xl sm:p-8">
@@ -78,7 +78,7 @@ export default function NotebookPanel({ name, concepts, onClose }: NotebookPanel
             <h2 className="font-display mt-2 text-3xl font-semibold text-[#111827]">What is taking shape</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">Each page follows one idea in {name}&apos;s onboarding journey.</p>
           </div>
-          <button onClick={onClose} className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-amber-50">
+          <button onClick={onClose} className="touch-target rounded-full px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-amber-50">
             Close
           </button>
         </div>
@@ -93,6 +93,6 @@ export default function NotebookPanel({ name, concepts, onClose }: NotebookPanel
           </div>
         )}
       </aside>
-    </div>
+    </FocusDialog>
   );
 }

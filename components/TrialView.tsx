@@ -59,7 +59,7 @@ export default function TrialView({ subjectId }: { subjectId?: string }) {
             <button onClick={start} disabled={running} className="button-primary mt-5">
               {running ? "Preparing check..." : "Start knowledge check"}
             </button>
-            {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
+            {error ? <p role="alert" className="mt-3 text-sm text-rose-600">{error}</p> : null}
           </div>
         ) : null}
 
@@ -68,7 +68,7 @@ export default function TrialView({ subjectId }: { subjectId?: string }) {
             <p className="text-sm font-medium text-indigo-600">Question {index + 1} of {check.questions.length} · {current.concept}</p>
             <h2 className="font-display mt-4 text-3xl font-semibold leading-10 text-[#111827]">{current.question}</h2>
             <div className="mt-7 rounded-2xl border border-[#F3F4F6] bg-[#F9FAFB] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{check.hireName}&apos;s answer</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{check.hireName}&apos;s answer</p>
               <p className="mt-3 text-sm leading-7 text-slate-700">{current.answer}</p>
             </div>
             <button onClick={() => setIndex((value) => value + 1)} className="button-primary mt-6">
