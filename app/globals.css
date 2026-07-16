@@ -1,8 +1,22 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body { @apply bg-[#faf9f7] text-slate-800; }
+@layer base {
+  body {
+    @apply bg-white text-[#374151] antialiased;
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  button, input, textarea { font: inherit; }
+}
+
+.font-display { font-family: "Fraunces", Georgia, serif; }
+.surface-card { @apply rounded-2xl border border-[#F3F4F6] bg-white shadow-sm transition-shadow duration-200 hover:shadow-md; }
+.button-primary { @apply inline-flex items-center justify-center rounded-full bg-[#4F46E5] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4338CA] focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50; }
+.button-secondary { @apply inline-flex items-center justify-center rounded-full border border-[#E5E7EB] bg-white px-6 py-3.5 text-sm font-semibold text-[#111827] transition hover:bg-[#F9FAFB] focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50; }
 /* Root pages fill the available space in the app shell; the legal footer then
    sits at the bottom of a short page instead of creating an extra viewport. */
 main.min-h-screen { min-height: 0; flex: 1; }
@@ -15,3 +29,5 @@ main.min-h-screen { min-height: 0; flex: 1; }
 .typing-dot:nth-child(3) { animation-delay: .3s; }
 @keyframes message-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .message-in { animation: message-in .22s ease-out both; }
+@keyframes gentle-float { 0%, 100% { transform: translateY(0) rotate(var(--chip-rotate, 0deg)); } 50% { transform: translateY(-4px) rotate(var(--chip-rotate, 0deg)); } }
+.float-chip { animation: gentle-float 6s ease-in-out infinite; }

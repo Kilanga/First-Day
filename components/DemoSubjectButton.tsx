@@ -17,5 +17,5 @@ export default function DemoSubjectButton() {
       router.push(`/office?${query}`);
     } finally { setLoading(false); }
   }
-  return <button onClick={start} disabled={loading} className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50">{loading ? "Preparing your hire…" : "Try the demo subject"}</button>;
+  return <button onClick={start} disabled={loading} className="button-primary">{loading ? "Preparing your hire…" : "Try the demo subject"}</button>;
 }

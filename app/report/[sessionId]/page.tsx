@@ -37,17 +37,17 @@ export default async function ReportPage({ params }: { params: Promise<{ session
   })}`;
 
   return (
-    <main className="min-h-screen bg-[#faf9f7] px-5 py-10 text-slate-800 sm:px-8">
+    <main className="min-h-screen bg-white px-5 py-14 text-slate-800 sm:px-8 sm:py-20">
       <ReportLanguageGuard sessionId={session.id} language={report?.language} />
       <div className="mx-auto max-w-4xl">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">First Day · {session.subject.title}</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Here&apos;s how your teaching went</h1>
+        <h1 className="font-display mt-4 text-4xl font-semibold leading-tight tracking-[-0.03em] text-[#111827] sm:text-5xl">Here&apos;s how your teaching went</h1>
         <p className="mt-3 max-w-2xl text-slate-600">A few clear takeaways from this session — what helped, and where your next explanation can go further.</p>
 
-        <section className="mt-8 rotate-[-0.25deg] rounded-2xl border border-amber-200 bg-[#fffdf6] p-6 shadow-sm sm:p-8">
+        <section className="surface-card mt-10 border-l-[3px] border-l-[#E5E7EB] p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">{hire.name}&apos;s journal</p>
-          <h2 className="mt-2 font-serif text-2xl text-slate-900">Today&apos;s note from my desk</h2>
-          <p className="mt-5 max-w-2xl whitespace-pre-line font-serif text-lg leading-8 text-slate-700">
+          <h2 className="font-display mt-2 text-3xl font-semibold text-[#111827]">Today&apos;s note from my desk</h2>
+          <p className="font-display mt-5 max-w-2xl whitespace-pre-line text-lg leading-8 text-slate-700">
             {session.journalEntry ? `“${session.journalEntry}”` : "I’m still putting today’s ideas into my own words."}
           </p>
           <p className="mt-5 text-sm font-semibold text-slate-700">— {hire.name}</p>
@@ -56,9 +56,9 @@ export default async function ReportPage({ params }: { params: Promise<{ session
         <div className="mt-8"><MentorFeedback sessionId={session.id} initialFeedback={session.mentorFeedback} name={hire.name} autoAsk={session.feedbackDue} /></div>
         <div className="mt-10">{report ? <GapReport report={report} /> : <p className="rounded-2xl bg-white p-6 text-slate-600 shadow-sm">Your session report is being prepared.</p>}</div>
         <div className="mt-10 flex flex-wrap gap-3">
-          <Link href={followUp} className="inline-flex rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white">Start a follow-up session</Link>
+          <Link href={followUp} className="button-primary">Start a follow-up session</Link>
           {report ? <ReportExportButton sessionId={session.id} /> : null}
-          <Link href="/" className="inline-flex rounded-xl border border-indigo-200 px-5 py-3 text-sm font-semibold text-indigo-700">Back to home</Link>
+          <Link href="/" className="button-secondary">Back to home</Link>
         </div>
       </div>
     </main>

@@ -4,7 +4,7 @@ const contact = process.env.NEXT_PUBLIC_LEGAL_CONTACT_EMAIL;
 export const metadata = { title: "Privacy | First Day" };
 
 export default function PrivacyPage() {
-  return <main className="min-h-screen bg-[#faf9f7] px-5 py-14 sm:px-8"><article className="mx-auto max-w-3xl rounded-2xl border border-indigo-100 bg-white p-7 shadow-sm sm:p-10">
+  return <main className="min-h-screen bg-white px-5 py-14 sm:px-8"><article className="surface-card mx-auto max-w-3xl p-7 sm:p-10">
     <Link href="/" className="text-sm font-medium text-indigo-700 hover:text-indigo-900">← Back to First Day</Link>
     <p className="mt-8 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">First Day</p><h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Privacy notice</h1><p className="mt-3 text-sm text-slate-500">Last updated: July 16, 2026</p>
     <div className="mt-8 space-y-7 text-sm leading-6 text-slate-700">
