@@ -18,5 +18,5 @@ export async function ensureMentorSession() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ mentorId: localMentorId() }),
   });
-  if (!response.ok) throw new Error("Unable to open your private onboarding desk.");
+  if (!response.ok) throw new Error("Unable to open your private learning desk.");
 }

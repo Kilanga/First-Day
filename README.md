@@ -1,6 +1,6 @@
 # First Day
 
-First Day is a learning app that reverses the usual AI-tutor relationship. Instead of asking an AI for answers, a mentor teaches a curious new hire. The colleague asks plausible, strategically naive questions; explaining clearly is the learning exercise.
+First Day is a learning app that reverses the usual AI-tutor relationship. Instead of asking an AI for answers, a mentor teaches a curious learner. The learning partner asks plausible, strategically naive questions; explaining clearly is the learning exercise.
 
 The product is built around the protégé effect: people consolidate knowledge when they have to teach it. The goal is not to make the learner look clever. It is to make the mentor notice where an explanation is incomplete, vague, or missing a practical example.
 
@@ -9,9 +9,9 @@ The product is built around the protégé effect: people consolidate knowledge w
 - Creates a subject from a title and optional reference notes.
 - Accepts local Markdown, text, Word, PowerPoint, and text-based PDF documentation when creating a subject. When files are attached, the mentor must state a learning focus so the generated practice stays scoped to the relevant material; only extracted text is used and files are not retained.
 - Builds a private concept and misconception map for that subject.
-- Gives the subject a named new hire with a small, consistent personality.
-- Runs a teaching conversation, with the new hire asking the next useful question.
-- Tracks what the colleague has genuinely understood, without revealing the hidden assessment system in the conversation.
+- Gives the subject a named learning partner with a small, consistent personality.
+- Runs a teaching conversation, with the learning partner asking the next useful question.
+- Tracks what the learner has genuinely understood, without revealing the hidden assessment system in the conversation.
 - Turns progress into in-character artifacts: a notebook, a session agenda, breakthrough moments, a journal entry, and a skills matrix.
 - Produces an end-of-session teaching report and a short 360-style note from the colleague.
 - Supports several subjects, resumable sessions, and a lightweight report history for one anonymous browser-based mentor.
@@ -37,7 +37,7 @@ The conversation loop is deliberately split into distinct responsibilities.
 1. The subject route creates the mentor, subject, hire, and one `ConceptState` per generated concept. For uploaded documents, it treats the mentor's stated learning focus as the highest-priority instruction.
 2. The Examiner evaluates the mentor's latest explanation privately and returns structured data for backend updates.
 3. The orchestrator updates concept state, XP, tiers, skills, the session agenda, and breakthrough state.
-4. The New Hire receives the private onboarding state and speaks only as the junior colleague. It never exposes the concept map, scores, verdicts, or evaluation process.
+4. The learning partner receives the private learning state and speaks only as a curious learner. It never exposes the concept map, scores, verdicts, or evaluation process.
 5. The report route turns private notes into mentor-facing strengths and concrete next steps. It also stores an in-character journal entry.
 
 All OpenAI access goes through [`lib/openai.ts`](./lib/openai.ts). JSON calls request structured output, parse it strictly, retry once after malformed JSON, and fail safely through the API route rather than crashing the UI.

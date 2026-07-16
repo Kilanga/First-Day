@@ -107,7 +107,7 @@ export async function getBackgroundJsonResponse(responseId: string): Promise<Bac
 
 export type ConversationMessage = { role: "user" | "assistant"; content: string };
 
-/** Calls OpenAI for the new hire's plain-text conversational response. */
+/** Calls OpenAI for the learner's plain-text conversational response. */
 export async function callText(system: string, messages: ConversationMessage[]): Promise<string> {
   const client = getClient();
   const completion = await client.chat.completions.create({

@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
     const mentorId = requireMentorId(request);
     if (!(await consumeMessageQuota(mentorId))) {
-      return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
+      return NextResponse.json({ error: "The learning space is closed for today — come back tomorrow." }, { status: 429 });
     }
     chargedMentorId = mentorId;
     const result = await orchestrateChat({ ...body, mentorId });
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     logOperationalEvent("chat.failed", { durationMs: Date.now() - startedAt, status: temporarilyUnavailable ? 503 : 502, temporarilyUnavailable });
     return NextResponse.json({
       error: temporarilyUnavailable
-        ? "The office is temporarily unavailable. Please try again in a little while."
+        ? "The learning space is temporarily unavailable. Please try again in a little while."
         : "We couldn't process that explanation. Please try again.",
     }, { status: temporarilyUnavailable ? 503 : 502 });
   }

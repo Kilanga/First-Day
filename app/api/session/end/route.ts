@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     if (!session?.subject.hire) return NextResponse.json({ error: "Session not found." }, { status: 404 });
     const cachedReport = storedReport(session.gapReport);
     if (session.endedAt && cachedReport && (!refreshLanguage || cachedReport.language === "English")) return NextResponse.json({ sessionId: session.id, report: cachedReport, snapshotMessageCount: session.reportMessageCount, snapshotAt: session.reportSnapshotAt });
-    if (!cachedReport && !(await consumeAiActionQuota(mentorId, "report"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
+    if (!cachedReport && !(await consumeAiActionQuota(mentorId, "report"))) return NextResponse.json({ error: "The learning space is closed for today — come back tomorrow." }, { status: 429 });
 
     let report = cachedReport;
     if (report && refreshLanguage && report.language !== "English") {
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     }
 
     const memory = (await callText(
-      `You are ${session.subject.hire.name}, a curious new hire. Write ONE warm memory from your perspective about this onboarding session. It must be first person, at most two sentences, and reference a concrete example the mentor used if there was one. Write in English only, even if the conversation used another language. Do not mention assessment, scores, points, or AI. Return only the memory text.`,
+      `You are ${session.subject.hire.name}, a curious learner. Write ONE warm memory from your perspective about this learning session. It must be first person, at most two sentences, and reference a concrete example the mentor used if there was one. Write in English only, even if the conversation used another language. Do not mention assessment, scores, points, or AI. Return only the memory text.`,
       [{ role: "user", content: session.messages.map((message) => `${message.role}: ${message.content}`).join("\n") }],
     )).trim();
     const existingMemories = Array.isArray(session.subject.hire.memories) ? session.subject.hire.memories.filter((item): item is string => typeof item === "string") : [];

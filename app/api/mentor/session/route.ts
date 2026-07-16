@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const resolved = resolveMentorId(request, mentorId);
     return issueMentorSession(NextResponse.json({ ready: true }), resolved.mentorId);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to open a private onboarding desk.";
+    const message = error instanceof Error ? error.message : "Unable to open a private learning desk.";
     const status = /private-session signing secret/i.test(message) ? 500 : 401;
     return NextResponse.json({ error: message }, { status });
   }
@@ -35,6 +35,6 @@ export async function DELETE(request: Request) {
     return response;
   } catch (error) {
     console.error("Mentor data deletion failed", error);
-    return NextResponse.json({ error: "Unable to delete your onboarding desk data." }, { status: 502 });
+    return NextResponse.json({ error: "Unable to delete your learning desk data." }, { status: 502 });
   }
 }

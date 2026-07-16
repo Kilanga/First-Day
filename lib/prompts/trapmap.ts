@@ -24,7 +24,7 @@ export const trapMapSchemaHint = `{
   }]
 }`;
 
-export const trapMapSystemPrompt = `You are a curriculum analyst. Given a subject (and optionally the user's own reference notes), produce a "trap map": the raw material a strategically naive new hire will use to ask productively wrong questions.
+export const trapMapSystemPrompt = `You are a curriculum analyst. Given a subject (and optionally the user's own reference notes), produce a "trap map": the raw material a strategically naive learner will use to ask productively wrong questions.
 
 Rules:
 - Return ONLY valid JSON, no markdown fences.

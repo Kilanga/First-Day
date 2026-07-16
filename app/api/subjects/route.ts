@@ -55,12 +55,12 @@ export async function POST(request: Request) {
     if (body.focus !== undefined && typeof body.focus !== "string") return NextResponse.json({ error: "Your learning focus could not be read. Please try again." }, { status: 400 });
     if (typeof body.notes === "string" && body.notes.length > 12_000) return NextResponse.json({ error: "Reference notes must be 12,000 characters or shorter." }, { status: 400 });
     if (typeof body.focus === "string" && body.focus.length > 600) return NextResponse.json({ error: "Your learning focus must be 600 characters or shorter." }, { status: 400 });
-    if (!isDemo && body.files.length > 0 && (typeof body.focus !== "string" || !body.focus.trim())) return NextResponse.json({ error: "Describe what your new hire should learn from the documents." }, { status: 400 });
+    if (!isDemo && body.files.length > 0 && (typeof body.focus !== "string" || !body.focus.trim())) return NextResponse.json({ error: "Describe what your learning partner should learn from the documents." }, { status: 400 });
 
     const mentorId = mentorSession.mentorId;
     const ipLimit = Number(process.env.IP_SUBJECT_HOURLY_CAP ?? 10);
-    if (!isDemo && !(await consumeIpQuota(request, "subject", Number.isFinite(ipLimit) && ipLimit > 0 ? ipLimit : 10))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
-    if (!isDemo && !(await consumeAiActionQuota(mentorId, "subject"))) return NextResponse.json({ error: "The office is closed for today — come back tomorrow." }, { status: 429 });
+    if (!isDemo && !(await consumeIpQuota(request, "subject", Number.isFinite(ipLimit) && ipLimit > 0 ? ipLimit : 10))) return NextResponse.json({ error: "The learning space is closed for today — come back tomorrow." }, { status: 429 });
+    if (!isDemo && !(await consumeAiActionQuota(mentorId, "subject"))) return NextResponse.json({ error: "The learning space is closed for today — come back tomorrow." }, { status: 429 });
     const providedTitle = typeof body.title === "string" ? body.title.trim() : "";
     const mentor = await prisma.mentor.upsert({ where: { id: mentorId }, update: {}, create: { id: mentorId } });
     const title = isDemo ? "Project Management Fundamentals" : providedTitle;
@@ -93,21 +93,21 @@ export async function POST(request: Request) {
           status: typeof details?.status === "number" ? details.status : undefined,
           code: typeof details?.code === "string" ? details.code : undefined,
         });
-        await prisma.subject.update({ where: { id: subject.id }, data: { generationStatus: "failed", generationError: "We could not start preparing this onboarding plan. Try again." } });
+        await prisma.subject.update({ where: { id: subject.id }, data: { generationStatus: "failed", generationError: "We could not start preparing this learning path. Try again." } });
         await refundAiActionQuota(mentorId, "subject");
       }
     }
     const firstQuestion = trapMap ? orderedConcepts(trapMap)[0]?.misconceptions[0]?.naive_question : undefined;
-    if (!subject.hire) throw new Error("The new hire could not be created.");
+    if (!subject.hire) throw new Error("The learning partner could not be created.");
     const response = NextResponse.json({ subjectId: subject.id, status: generationStarted ? (isDemo ? "ready" : "preparing") : "failed", hire: { name: subject.hire.name, tier: subject.hire.tier, xp: subject.hire.xp, stats: { comprehension: subject.hire.statComprehension, autonomy: subject.hire.statAutonomy, reflexes: subject.hire.statReflexes, confidence: subject.hire.statConfidence }, personality }, firstQuestion });
     logOperationalEvent(generationStarted ? "subject.created" : "subject.generation_start_failed", { durationMs: Date.now() - startedAt, demo: isDemo });
     return mentorSession.shouldIssueCookie ? issueMentorSession(response, mentorId) : response;
   } catch (error) {
     console.error("Subject creation failed", error);
     logOperationalEvent("subject.failed", { durationMs: Date.now() - startedAt });
-    const message = error instanceof Error && /private-session signing secret/i.test(error.message) ? "Private mentoring sessions are unavailable right now. Please return to your onboarding desk and try again."
+    const message = error instanceof Error && /private-session signing secret/i.test(error.message) ? "Private learning sessions are unavailable right now. Please return to your learning desk and try again."
       : error instanceof Error && /document|supported|larger|read any text|couldn't read|Add up to/i.test(error.message) ? error.message
-      : error instanceof Error && /timed out|timeout/i.test(error.message) ? "Creating this onboarding plan took longer than expected. Please try again."
+      : error instanceof Error && /timed out|timeout/i.test(error.message) ? "Creating this learning path took longer than expected. Please try again."
         : "Unable to create this subject.";
     return NextResponse.json({ error: message }, { status: 502 });
   }
@@ -119,7 +119,7 @@ export async function DELETE(request: Request) {
     const mentorId = requireMentorId(request);
     if (typeof subjectId !== "string") return NextResponse.json({ error: "subjectId is required." }, { status: 400 });
     const subject = await prisma.subject.findFirst({ where: { id: subjectId, mentorId }, select: { id: true, hire: { select: { id: true } }, sessions: { select: { id: true } } } });
-    if (!subject) return NextResponse.json({ error: "Onboarding subject not found." }, { status: 404 });
+    if (!subject) return NextResponse.json({ error: "Learning subject not found." }, { status: 404 });
     const sessionIds = subject.sessions.map((session) => session.id);
     await prisma.$transaction([
       prisma.message.deleteMany({ where: { sessionId: { in: sessionIds } } }),
@@ -131,6 +131,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ deleted: true });
   } catch (error) {
     console.error("Subject deletion failed", error);
-    return NextResponse.json({ error: "Unable to delete this onboarding subject." }, { status: 502 });
+    return NextResponse.json({ error: "Unable to delete this learning subject." }, { status: 502 });
   }
 }

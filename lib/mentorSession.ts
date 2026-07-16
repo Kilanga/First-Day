@@ -52,14 +52,14 @@ export function getMentorIdFromCookieHeader(header: string | null) {
 
 export function requireMentorId(request: Request) {
   const mentorId = getMentorIdFromCookieHeader(request.headers.get("cookie"));
-  if (!mentorId) throw new Error("Your private mentoring session has expired. Return to your onboarding desk and try again.");
+  if (!mentorId) throw new Error("Your private learning session has expired. Return to your learning desk and try again.");
   return mentorId;
 }
 
 export function resolveMentorId(request: Request, suppliedMentorId: unknown) {
   const existingMentorId = getMentorIdFromCookieHeader(request.headers.get("cookie"));
   if (existingMentorId) {
-    if (suppliedMentorId !== undefined && suppliedMentorId !== existingMentorId) throw new Error("This browser is already linked to another private onboarding desk.");
+    if (suppliedMentorId !== undefined && suppliedMentorId !== existingMentorId) throw new Error("This browser is already linked to another private learning desk.");
     return { mentorId: existingMentorId, shouldIssueCookie: false };
   }
   if (!isMentorId(suppliedMentorId)) throw new Error("A private mentor session is required.");
