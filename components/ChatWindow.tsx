@@ -122,7 +122,7 @@ export default function ChatWindow({
     const replyTimer = window.setTimeout(() => setThinkingLabel(`${hire.name} is preparing the next question...`), 2600);
 
     try {
-      if (!subjectId) throw new Error("Open a learning subject to start a live conversation.");
+      if (!subjectId) throw new Error("Open an onboarding subject to start a live conversation.");
 
       await ensureMentorSession();
       const response = await fetch("/api/chat", {

@@ -36,3 +36,12 @@ main.min-h-screen { min-height: 0; flex: 1; }
 .message-in { animation: message-in .22s ease-out both; }
 @keyframes gentle-float { 0%, 100% { transform: translateY(0) rotate(var(--chip-rotate, 0deg)); } 50% { transform: translateY(-4px) rotate(var(--chip-rotate, 0deg)); } }
 .float-chip { animation: gentle-float 6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -54,11 +54,11 @@ export default async function ReportPage({ params }: { params: Promise<{ session
         </section>
 
         <div className="mt-8"><MentorFeedback sessionId={session.id} initialFeedback={session.mentorFeedback} name={hire.name} autoAsk={session.feedbackDue} /></div>
-        <div className="mt-10">{report ? <GapReport report={report} /> : <p className="rounded-2xl bg-white p-6 text-slate-600 shadow-sm">Your session report is being prepared.</p>}</div>
+        <div className="mt-10">{report ? <GapReport report={report} /> : <p className="rounded-2xl bg-white p-6 text-slate-600 shadow-sm">Your teaching report is being prepared.</p>}</div>
         <div className="mt-10 flex flex-wrap gap-3">
           <Link href={followUp} className="button-primary">Start a follow-up session</Link>
           {report ? <ReportExportButton sessionId={session.id} /> : null}
-          <Link href="/" className="button-secondary">Back to home</Link>
+          <Link href="/" className="button-secondary">Back to welcome</Link>
         </div>
       </div>
     </main>

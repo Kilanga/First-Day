@@ -16,11 +16,11 @@ export default function SharedOnboardingClaim({ shareCode, title, hireName }: { 
     try {
       const response = await fetch(`/api/shared-subjects/${shareCode}/claim`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mentorId: localMentorId() }) });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Unable to start this learning.");
+      if (!response.ok) throw new Error(data.error ?? "Unable to start this onboarding.");
       const query = new URLSearchParams({ subjectId: data.subjectId, title, hireName: data.hire.name, firstQuestion: data.firstQuestion });
       router.push(`/office?${query}`);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unable to start this learning.");
+      setError(caught instanceof Error ? caught.message : "Unable to start this onboarding.");
       setLoading(false);
     }
   }
