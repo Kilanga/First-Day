@@ -1,11 +1,19 @@
 # First Day — Project Context
 
-First Day is a learning app that inverts the AI tutor: the AI plays a curious
-learner, and the USER is the mentor. Users consolidate knowledge by explaining
+## LOCKED DECISIONS — never modify this section, never revert these
+## choices, even if a later instruction seems to imply otherwise.
+## If a change would conflict with them, STOP and ask the user.
+- Product voice: workplace new-hire fiction ("new hire", "colleague",
+  "the office", "onboarding desk", "XP", probation-flavored tiers).
+  Educational wording is allowed only for mechanism names (teaching
+  report, knowledge check, protégé effect). Never rename the voice.
+
+First Day is a learning app that inverts the AI tutor: the AI plays a new hire,
+and the USER is the mentor. Users consolidate knowledge by explaining
 it (the protégé effect). The learner asks strategically naive questions that
 embody real domain misconceptions. A hidden Examiner grades each explanation;
-good teaching earns the learner points, skills, and tier promotions
-(Explorer → Builder → Guide).
+good teaching earns the new hire XP, skills, and tier promotions
+(Week 1 → First Month → Confirmed).
 
 ## Stack
 
@@ -15,13 +23,12 @@ anonymous mentor UUID stored in localStorage, sent with every API call.
 
 ## Non-negotiable rules
 
-- All UI copy is in English and uses an educational voice: curious learner,
-  learning partner, learning desk, and learning session.
-- The learner NEVER reveals the trap map, verdicts, points, or that it is
+- All UI copy is in English and uses the workplace new-hire voice.
+- The new hire NEVER reveals the trap map, verdicts, XP, or that it is
   evaluated. It never pretends to understand after a failed explanation.
 - Verdict JSON is used by the backend and for UI animations only — never
   displayed verbatim to the user.
-- Gamification is expressed through the learner's notebook, learning plan,
+- Gamification is expressed through the new hire's notebook, office plan,
   journal, and in-character feedback. Never expose verdict names, hidden
   concept states, scoring logic, or internal assessment language in the UI.
 - Every OpenAI call goes through lib/openai.ts (strict JSON parsing where

@@ -14,8 +14,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ subj
     if (!subject) return NextResponse.json({ error: "Learning subject not found." }, { status: 404 });
     return NextResponse.json(await refreshSubjectGeneration(subject.id));
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to check this learning path.";
-    const status = /private learning session|private session/i.test(message) ? 401 : 502;
+    const message = error instanceof Error ? error.message : "Unable to check this onboarding plan.";
+    const status = /private onboarding session|private session/i.test(message) ? 401 : 502;
     return NextResponse.json({ status: "failed", error: message }, { status });
   }
 }
@@ -24,8 +24,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ sub
   try {
     const subject = await privateSubject(request, (await params).subjectId);
     const prompt = (subject?.generationInput as { prompt?: unknown } | null)?.prompt;
-    if (!subject || typeof prompt !== "string") return NextResponse.json({ error: "This learning path cannot be retried." }, { status: 400 });
+    if (!subject || typeof prompt !== "string") return NextResponse.json({ error: "This onboarding plan cannot be retried." }, { status: 400 });
     await startSubjectGeneration(subject.id, prompt);
     return NextResponse.json({ status: "preparing" });
-  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to retry this learning path." }, { status: 502 }); }
+  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to retry this onboarding plan." }, { status: 502 }); }
 }

@@ -21,17 +21,17 @@ export async function startSubjectGeneration(subjectId: string, prompt: string) 
 
 export async function refreshSubjectGeneration(subjectId: string): Promise<GenerationState> {
   const subject = await prisma.subject.findUnique({ where: { id: subjectId }, select: { id: true, trapMap: true, generationStatus: true, generationResponseId: true, generationInput: true, generationAttempts: true } });
-  if (!subject) return { status: "failed", error: "This learning path no longer exists." };
+  if (!subject) return { status: "failed", error: "This onboarding plan no longer exists." };
   if (subject.generationStatus === "ready") {
     const map = subject.trapMap as unknown as TrapMap;
     return { status: "ready", firstQuestion: orderedConcepts(map)[0]?.misconceptions[0]?.naive_question };
   }
-  if (!subject.generationResponseId) return { status: "failed", error: "The learning path could not be started. Try again." };
+  if (!subject.generationResponseId) return { status: "failed", error: "The onboarding plan could not be started. Try again." };
 
   const response = await getBackgroundJsonResponse(subject.generationResponseId);
   if (response.status === "queued" || response.status === "in_progress") return { status: "preparing" };
   if (response.status !== "completed") {
-    const error = "We could not finish preparing this learning path. Try again.";
+    const error = "We could not finish preparing this onboarding plan. Try again.";
     await prisma.subject.update({ where: { id: subject.id }, data: { generationStatus: "failed", generationError: error, generationResponseId: null } });
     return { status: "failed", error };
   }
@@ -39,7 +39,7 @@ export async function refreshSubjectGeneration(subjectId: string): Promise<Gener
   try {
     const map = JSON.parse(response.outputText) as TrapMap;
     assertTrapMap(map);
-    if (map.concepts.length < 5 || map.concepts.length > 8) throw new Error("The study map needs 5 to 8 concepts.");
+    if (map.concepts.length < 5 || map.concepts.length > 8) throw new Error("The onboarding map needs 5 to 8 concepts.");
     await prisma.$transaction([
       prisma.conceptState.deleteMany({ where: { subjectId: subject.id } }),
       prisma.subject.update({
@@ -54,7 +54,7 @@ export async function refreshSubjectGeneration(subjectId: string): Promise<Gener
       await startSubjectGeneration(subject.id, `${prompt}\n\nYour previous response was invalid. Return only a valid JSON object matching the requested schema.`);
       return { status: "preparing" };
     }
-    const error = "We could not prepare this learning path. Try again.";
+    const error = "We could not prepare this onboarding plan. Try again.";
     await prisma.subject.update({ where: { id: subject.id }, data: { generationStatus: "failed", generationError: error, generationResponseId: null } });
     return { status: "failed", error };
   }

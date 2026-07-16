@@ -187,7 +187,7 @@ export default function OfficeWorkspace({ subjectId, title, name, initialQuestio
       </div>
       {tierUp ? <div className="mb-5 rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-3 text-center text-sm font-semibold text-indigo-800">{hire.name} is now a {tierLabel(hire.tier)}!</div> : null}
       {breakthrough ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-center text-sm font-semibold text-amber-900">A real breakthrough - {hire.name} finally connected the dots.</div> : null}
-      {agendaComplete ? <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-center text-sm font-semibold text-emerald-900">That was a great learning session - I got everything on my list!</div> : null}
+      {agendaComplete ? <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-center text-sm font-semibold text-emerald-900">That was a great one-on-one - I got everything on my list!</div> : null}
       <div className="grid items-start gap-6 md:grid-cols-3">
         <div className="md:col-span-2"><ChatWindow subjectId={subjectId} hire={hire} initialQuestion={currentQuestion} initialSessionId={currentSubject?.activeSession?.id} initialMessages={currentSubject?.activeSession?.messages} onHireUpdate={updateHire} /></div>
         <div className="space-y-6">

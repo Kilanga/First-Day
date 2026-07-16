@@ -1,27 +1,25 @@
 # First Day
 
-First Day is a learning app that reverses the usual AI-tutor relationship. Instead of asking an AI for answers, you teach a curious learner. Your learning partner asks plausible, strategically naive questions; explaining clearly is the learning exercise.
+First Day is a learning app that reverses the usual AI-tutor relationship. Instead of asking an AI for answers, you teach a believable new hire. Your colleague asks strategically naive questions; explaining clearly is the exercise.
 
-The product is built around the protege effect: people consolidate knowledge when they have to teach it. The goal is not to make the AI look clever. It is to help you notice where an explanation is incomplete, vague, or missing a practical example.
+The product is built around the protégé effect: people consolidate knowledge when they have to teach it. The goal is not to make the new hire look clever. It is to make the mentor notice where an explanation is incomplete, vague, or missing a practical example.
 
 ## Why it stands out
 
-Most learning products make the AI the expert and the person the recipient of an answer. First Day makes the person the teacher and gives the AI a deliberately incomplete mental model of the subject. That changes the interaction from answer retrieval to active explanation.
+Most learning products make the AI the expert and the person the recipient of an answer. First Day makes the person the mentor and gives the AI a deliberately incomplete mental model of the subject. That changes the interaction from answer retrieval to active explanation.
 
-The model is not trusted to keep score on its own. A private misconception map, a structured examiner, and deterministic application state turn each conversation into visible evidence: the learner's reformulations, field notes, learning plan, knowledge checks, and teaching report. The result is an AI learning companion that makes the protege effect tangible rather than merely talking about it.
+A private misconception map, a structured examiner, and deterministic application state turn each office conversation into visible evidence: the colleague's reformulations, field notes, office plan, knowledge checks, and teaching report.
 
 ## What the product does
 
-- Creates a subject from a title and optional reference notes.
-- Accepts local Markdown, text, Word, PowerPoint, and text-based PDF documentation when creating a subject. When files are attached, the learner must state a learning focus so the generated practice stays scoped to the relevant material; only extracted text is used and files are not retained.
-- Builds a private concept and misconception map for that subject.
-- Gives the subject a named learning partner with a small, consistent personality.
-- Runs a teaching conversation, with the learning partner asking the next useful question.
-- Tracks what the learner has genuinely understood, without revealing the hidden assessment system in the conversation.
-- Turns progress into in-character artifacts: a notebook, a session agenda, breakthrough moments, a journal entry, and a skills matrix.
-- Produces an end-of-session teaching report and a short 360-style note from the learning partner.
-- Supports several subjects, resumable sessions, and a lightweight report history for one anonymous browser-based learner.
-- Lets a learner share a learning setup through a public link. Recipients receive the same subject and learning-partner personality, but a fresh private chat, progress state, journal, and reports. They can copy, renew, or disable a shared link.
+- Creates an onboarding subject from a title and optional reference notes.
+- Accepts local Markdown, text, Word, PowerPoint, and text-based PDF documentation. When files are attached, the mentor states the onboarding focus; only extracted text is used and files are not retained.
+- Builds a private concept and misconception map, then gives it a named new hire with a consistent personality.
+- Runs an office conversation where the colleague asks the next useful question.
+- Tracks what the new hire has genuinely understood without revealing the hidden assessment system.
+- Turns progress into in-character artifacts: field notes, an office plan, breakthrough moments, a journal entry, and a skills matrix.
+- Produces an end-of-session teaching report and a short 360-style note from the colleague.
+- Supports several subjects, resumable sessions, report history, and public links that create a fresh private onboarding copy for each recipient.
 
 The fixed demo trap map is deliberately deferred while the core product is being refined.
 
@@ -34,82 +32,25 @@ The fixed demo trap map is deliberately deferred while the core product is being
 - Vercel deployment
 - `pnpm`
 
-There is intentionally no account system in v1. An anonymous learner UUID is created in `localStorage` and is sent with each request.
+There is intentionally no account system in v1. An anonymous mentor UUID is created in `localStorage` and is sent with each request.
 
 ## Architecture
 
-The conversation loop is deliberately split into distinct responsibilities.
-
-1. The subject route creates the anonymous learner, subject, learning partner, and one `ConceptState` per generated concept. For uploaded documents, it treats the learner's stated learning focus as the highest-priority instruction.
-2. The Examiner evaluates the learner's latest explanation privately and returns structured data for backend updates.
-3. The orchestrator updates concept state, XP, tiers, skills, the session agenda, and breakthrough state.
-4. The learning partner receives the private learning state and speaks only as a curious learner. It never exposes the concept map, scores, verdicts, or evaluation process.
-5. The report route turns private notes into learner-facing strengths and concrete next steps. It also stores an in-character journal entry.
+1. The subject route creates the mentor, subject, new hire, and one `ConceptState` per generated concept.
+2. The Examiner evaluates the mentor's latest explanation privately and returns structured data for backend updates.
+3. The orchestrator updates concept state, XP, tiers, office plan, skills, and breakthrough state.
+4. The new hire receives the private state and speaks only as a colleague. It never exposes the concept map, XP, verdicts, or evaluation process.
+5. The report route turns private notes into mentor-facing strengths and concrete next steps, and stores an in-character journal entry.
 
 All OpenAI access goes through [`lib/openai.ts`](./lib/openai.ts). JSON calls request structured output, parse it strictly, retry once after malformed JSON, and fail safely through the API route rather than crashing the UI.
 
 ## Collaboration with Codex
 
-This project was developed as an iterative collaboration between the product owner and Codex, not as a one-shot code generation exercise. The conversation moved from a bare Next.js scaffold to a deployable learning loop, with implementation decisions repeatedly checked against the actual product experience.
+This project was developed as an iterative collaboration between the product owner and Codex, not as one-shot code generation. The human collaborator set the product direction: AI as a believable new hire, English workplace fiction, hidden assessment, private onboarding copies, and character-first progression rather than a score dashboard.
 
-### Where Codex accelerated the work
+Codex accelerated the implementation by scaffolding the Next.js/Prisma/OpenAI app, correcting Prisma relations, implementing prompt roles and the chat orchestrator, building the office, reports, knowledge check, rate limits, document extraction, session privacy, and Vercel hardening. It also traced real production failures across Prisma, Neon, Vercel, OpenAI JSON formatting, PDF extraction, and browser hydration.
 
-Codex handled the high-leverage engineering work quickly:
-
-- Scaffolded the Next.js, TypeScript, Tailwind, Prisma, and OpenAI structure with `pnpm`.
-- Corrected the initial Prisma schema when one-sided relations were identified, then created and maintained migrations.
-- Implemented the OpenAI JSON helper, prompt modules, chat orchestrator, XP logic, rate limiting, report generation, trial route, and Prisma data access.
-- Built the landing page, learning-partner reveal, learning-space layout, chat window, progress card, reports, subject tabs, resumable sessions, and the later character-driven gamification pass.
-- Investigated real deployment failures: Prisma client generation on Vercel, a 404 caused by the original Vercel project setup, and surfaced the distinction between application compilation and a Neon/Prisma connection problem.
-- Repeatedly ran schema validation, type checking, production builds, diff checks, and Git publishing steps.
-- Added document extraction for local reference material, then hardened the Vercel PDF runtime by tracing the PDF worker and limiting native PDF dependencies to PDF uploads only.
-- Added shareable learning links that clone a reusable learning setup without exposing another learner's messages or progression.
-
-Codex also sped up debugging by tracing the entire request path rather than only the visible UI. For example, when chat history appeared to disappear, the client hydration logic was adjusted so a state refresh could not overwrite newly received local messages.
-
-### Product decisions made by the human collaborator
-
-The important product direction came from the human collaborator. Key decisions included:
-
-- The learning partner should be a believable novice learner, not a conventional tutor or quiz bot.
-- The AI must never reveal the hidden misconception map, judgement, XP logic, or evaluation language.
-- UI copy should be English, even though product collaboration happened in French.
-- The initial single-session model was insufficient: multiple subjects and resumable sessions were needed, represented as subject/learning-partner tabs.
-- “End session” must preserve learning rather than delete it; it should lead to a report and allow a future follow-up session.
-- The live report should become the final report snapshot, avoiding an unnecessary second report-generation call.
-- Gamification should make the learning partner's understanding feel tangible rather than turn the product into a dashboard. This drove the notebook, agenda, journal, breakthrough, and skills-matrix design.
-- The learning partner's real generated name must be used everywhere instead of hard-coding a sample name.
-- The static demo is intentionally postponed so it does not need to be rebuilt while the core interaction changes.
-- Documentation uploads need a mandatory learning objective: a full company document is source material, not automatically the scope of a single learning session.
-- Shared links should duplicate a learning setup while keeping each recipient's conversation and progress private.
-
-Those decisions repeatedly changed the implementation priorities. Codex proposed technical options and implemented them, while the product owner chose the intended experience and corrected assumptions when the flow felt wrong.
-
-### How GPT-5.6 contributed
-
-`gpt-5.6` is used as a set of constrained roles rather than a single general chatbot:
-
-- **Trap map generator:** turns a subject and notes into 5–8 concepts, dependencies, and real novice misconceptions.
-- **Examiner/router:** privately judges whether an explanation establishes the target concept and supplies structured information for state updates.
-- **Learning partner:** produces short, in-character follow-up questions and reformulations, conditioned on learner state, personality, prior conversation, memory, and breakthrough context.
-- **Report writer:** turns stored examiner notes into a friendly, actionable session report.
-- **Journal and 360 feedback writer:** gives the learning partner a first-person voice for a session memory and concise learner feedback.
-- **Knowledge-check generator:** creates practical questions and then lets the learning partner answer only at the level demonstrated through the teaching sessions.
-
-The model is therefore used for language, misconception design, and character expression. Prisma, the orchestrator, concept states, XP, tiers, rate limits, and permissions remain deterministic application logic. This separation keeps the product reliable when a model response is malformed or unavailable.
-
-## Main product milestones
-
-1. **Foundation:** app scaffold, environment configuration, Prisma schema, Neon migration, and OpenAI helper.
-2. **Core learning loop:** trap-map subject creation, examiner, learning-partner prompts, orchestrator, XP/tier state, and chat persistence.
-3. **Teaching experience:** learning-space interface, progress card, typing states, learning-partner reveal, report page, knowledge-check page, and rate limits.
-4. **Continuity:** landing dashboard, several concurrent subjects, subject/learning-partner tabs, session resume, report snapshots, and follow-up sessions.
-5. **Character-driven progression:** notebook entries, three-item agenda, breakthrough moments, journal, skills matrix, and learner feedback.
-6. **Production hardening:** Vercel build fixes, migration deployment, input-size limits, bounded state payloads, retry/error messaging, and build verification.
-7. **Reusable learning:** local-document focus prompts and shareable learning links with isolated recipient state.
-8. **Finishing pass:** keyboard-friendly chat controls, accessible live updates, resilient retry states, mobile-safe action bars, and clearer shared-learning handoff.
-9. **Guided continuity:** a no-API “I’m stuck” explanation scaffold, next-focus and latest-win cues on the learning desk, and a preview of the learning flow.
-10. **Learner handoff:** private browser-only teaching checklists, Markdown report export, scoped document focus, and content-free operational logs for Vercel diagnostics.
+`gpt-5.6` is used as constrained roles: a trap-map generator, a private Examiner/router, the in-character new hire, a teaching-report writer, a journal/360 writer, and a knowledge-check generator. Prisma and the orchestrator keep XP, tiers, permissions, quotas, and concept state deterministic.
 
 ## Local development
 
@@ -128,55 +69,39 @@ NEXT_PUBLIC_LEGAL_CONTACT_EMAIL=privacy@your-domain.example
 NEXT_PUBLIC_LEGAL_HOST_NAME=Vercel Inc.
 ```
 
-Then run:
-
 ```bash
 corepack pnpm install
 corepack pnpm exec prisma migrate dev --name init
 corepack pnpm dev
 ```
 
-This project requires **pnpm 10 or newer** and **Node 22 or newer**. For production, Vercel runs the `build` script, which runs `prisma migrate deploy`, generates Prisma Client, and builds Next.js. It therefore requires `DATABASE_URL` during the build. Use `pnpm build:local` when you want the same build without applying migrations locally.
+This project requires **pnpm 10 or newer** and **Node 22 or newer**. Vercel runs `pnpm build`, which runs `prisma migrate deploy`, generates Prisma Client, and builds Next.js; it therefore needs `DATABASE_URL`. Use `pnpm build:local` when you want the build without applying migrations locally.
 
 ## Privacy and deployment safeguards
 
-- Private learning data is protected by a signed, HTTP-only anonymous-session cookie. Never share a report URL as a way to share a learning setup; use **Share this learning** instead.
-- The application sends security headers for content isolation, clickjacking protection, referrer minimisation, and restricted browser permissions.
-- Imported document text is transient: it is sent once to generate the trap map and is not retained. Do not upload confidential material unless your OpenAI and data-handling policies permit it.
-- The application includes `/privacy`, `/terms`, and `/legal`, together with a **Delete my data** control on the learning desk. Before any public launch, configure the publisher name and legal contact in Vercel; legal text is a practical starting point, not legal advice.
-- Shared-learning links are bearer links: anyone with the link can open the reusable template. Do not share confidential material through them.
-- Set `MENTOR_SESSION_SECRET` in Vercel before deploying this version. Use a unique random value of at least 32 characters. Configure Neon with its pooled connection URL for production traffic.
-- The app requires Node 22+ and pnpm 10+ for Vercel compatibility. Database indexes cover the main dashboard, session-history, and message-history queries.
-- OpenAI calls time out after 45 seconds by default, and public subject creation has both per-learner and hashed per-IP hourly limits. Keep Vercel Firewall enabled as a second layer in production.
-- Operational logs record route outcome and duration only. They deliberately exclude anonymous learner IDs, prompts, messages, source filenames, document text, and model output.
-
-### Production checklist
-
-1. Configure `OPENAI_API_KEY`, `DATABASE_URL`, `MENTOR_SESSION_SECRET`, and the three public legal variables in Vercel.
-2. Use Neon’s pooled production connection URL and keep direct migration credentials out of browser-visible variables.
-3. Enable Vercel Firewall protections and configure deployment/error notifications in the Vercel project dashboard.
-4. Confirm Vercel has no analytics or marketing tracker enabled unless its consent flow and privacy notice have been updated.
-5. After deployment, confirm `/privacy`, `/terms`, `/legal`, a protected report URL, document upload, shared-link disablement, and **Delete my data** all work as expected.
-6. Export a completed report from its **Download Markdown** button and confirm the file contains only that learner's report.
+- Private onboarding data is protected by a signed, HTTP-only anonymous-session cookie. Use **Share this onboarding** rather than a report URL to share a reusable setup.
+- Imported document text is transient: it is sent once to generate the trap map and is not retained.
+- Shared onboarding links are bearer links: anyone with a link can open the template. Do not share confidential material.
+- Set `MENTOR_SESSION_SECRET` to a unique random value of at least 32 characters in Vercel.
+- OpenAI calls time out after 45 seconds. Public creation has per-mentor and hashed per-IP hourly limits; keep Vercel Firewall enabled.
+- Operational logs exclude mentor IDs, prompts, messages, source filenames, document text, and model output.
 
 ## Manual test flow
 
-1. Create a subject and optional notes from the subject creation page (`/onboarding`). If attaching documentation, add the required learning focus, for example: “Focus on the reality-shifting core loop and common design mistakes.”
-2. Meet the generated learning partner and start the learning conversation.
-3. Reply to a naive question; verify the next in-character response and the XP/tier animation.
-4. Give an incomplete explanation, then improve it; verify the breakthrough moment and the notebook entry.
-5. Cover the three agenda items; verify the checklist and closing message.
-6. Open the notebook and hover skills-matrix cells for the learning partner's notes.
-7. End the session; verify the journal, report, and the feedback request.
-8. Return to the dashboard: completed subjects open their latest report, while “Start a new session” begins a fresh conversation.
-9. Open “Learning history” and verify each completed session links to its saved report.
-10. Use “Share this learning”, open the copied link in a private window, and verify that the recipient gets the same subject and learning partner but no prior messages or XP. Copy, renew, then disable the link and verify that the disabled link no longer opens.
+1. Create a subject from `/onboarding`; if attaching documentation, state the required onboarding focus.
+2. Meet the generated new hire and enter the office.
+3. Reply to a naive question; verify the in-character response and the XP/tier animation.
+4. Give an incomplete explanation, then improve it; verify the breakthrough moment and a field-notes entry.
+5. Cover the office-plan items; verify the checklist and closing message.
+6. End the session; verify the journal, teaching report, and feedback request.
+7. Open the knowledge check and verify that the colleague only answers at the level you taught.
+8. Use **Share this onboarding** in a private window; the recipient should receive the same subject and colleague but no prior messages or XP.
 
 ## Current v1 boundaries
 
 - No authentication or multi-user collaboration.
 - No streaming responses.
-- One learning partner per subject.
+- One new hire per subject.
 - The public demo remains a deferred static asset while the core loop evolves.
-- No external documentation connectors in v1; company documentation is supplied locally during subject creation.
-- Sharing is link-based and anonymous in v1; it is designed for reusable learning setups, not live multi-user collaboration.
+- No external documentation connectors in v1.
+- Sharing is anonymous and link-based; it is for reusable onboarding setups, not live collaboration.
