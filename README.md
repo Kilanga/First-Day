@@ -24,7 +24,7 @@ A private misconception map, a structured examiner, and deterministic applicatio
 - Supports several subjects, resumable sessions, report history, and public links that create a fresh private onboarding copy for each recipient.
 - Keeps the welcome screen, personal onboarding desk, and ephemeral demo deliberately separate. The demo has its own finished conversations and never reads or changes a visitor's private data.
 
-The demo includes two fixed conversations: project-management foundations with Sam and a playful maths onboarding with Milo. Visitors can continue either conversation with a real, ephemeral GPT-5.6 reply; demo messages are never saved.
+The demo includes two fixed starting conversations: project-management foundations with Sam and a playful maths onboarding with Milo. Visitors can continue either conversation with a real, ephemeral GPT-5.6 reply. A clear explanation updates that demo's visible office plan, Ramp-up, concept map, and field notes in the browser only; demo messages and progress are never saved.
 
 ## Stack
 
@@ -45,7 +45,7 @@ There is intentionally no account system in v1. An anonymous mentor UUID is crea
 4. The orchestrator updates concept state, XP, tiers, office plan, skills, and breakthrough state.
 5. The new hire receives the private state and speaks only as a colleague. It never exposes the concept map, XP, verdicts, or evaluation process.
 6. The report route turns private notes into mentor-facing strengths and concrete next steps, and stores an in-character journal entry.
-7. `/demo` and its two conversation routes are static snapshots. Their chat calls a tightly scoped, IP-limited GPT-5.6 route but never writes a database record.
+7. `/demo` and its two conversation routes are fixed starting scenarios. Their chat calls a tightly scoped, IP-limited GPT-5.6 route; two scenario-specific, deterministic checks update the visible demo progress without a second model call or a database write.
 
 All OpenAI access goes through [`lib/openai.ts`](./lib/openai.ts). JSON calls request structured output, parse it strictly, retry once after malformed JSON, and fail safely through the API route rather than crashing the UI.
 
@@ -103,15 +103,15 @@ For local end-to-end checks without using OpenAI credits, set `OPENAI_MOCK_MODE=
 6. End the session; verify the journal, teaching report, and feedback request.
 7. Open the knowledge check and verify that the colleague only answers at the level you taught.
 8. Use **Share this onboarding** in a private window; the recipient should receive the same subject and colleague but no prior messages or accumulated progress.
-9. From `/`, choose **Try the demo subject**; open Sam or Milo's office, write a reply, and verify that an in-character GPT-5.6 follow-up appears without creating a subject in your onboarding desk.
-10. Open `/demo`; switch between the two static conversations and verify that neither appears in your private onboarding desk.
+9. From `/`, choose **Try the demo subject**; open Sam or Milo's office, use **Try this reply**, and send it. Verify the in-character GPT-5.6 follow-up, the newly checked office-plan item, Ramp-up segment, concept-map cell, and field-notes entry.
+10. Open `/demo`; switch between the two fixed starting conversations and verify that neither appears in your private onboarding desk.
 
 ## Current v1 boundaries
 
 - No authentication or multi-user collaboration.
 - No streaming responses.
 - One new hire per subject.
-- The demo has fixed starting content. Its chat is ephemeral: it uses GPT-5.6 but never becomes a user session or writes a message to the database.
+- The demo has fixed starting content. Its chat and visible progress are ephemeral: it uses GPT-5.6 but never becomes a user session or writes a message or progress record to the database.
 - No external documentation connectors in v1.
 - Sharing is anonymous and link-based; it is for reusable onboarding setups, not live collaboration.
 
