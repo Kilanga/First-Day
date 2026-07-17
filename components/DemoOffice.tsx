@@ -17,9 +17,10 @@ type DemoConversation = {
   description: string;
   hire: HireView;
   concepts: SkillConcept[];
-  agenda: Array<{ name: string; complete: boolean }>;
+  agenda: Array<{ id: string; name: string; complete: boolean }>;
   messages: DemoMessage[];
   tryThis: string;
+  completion: { conceptId: string; notebookEntry: string };
   report: Report;
 };
 
@@ -51,9 +52,9 @@ const conversations: DemoConversation[] = [
     hire: { name: "Sam" },
     concepts: projectConcepts,
     agenda: [
-      { name: "Milestones vs Deliverables", complete: true },
-      { name: "Stakeholders vs the Sponsor", complete: true },
-      { name: "Scope Creep", complete: false },
+      { id: "milestone-vs-deliverable", name: "Milestones vs Deliverables", complete: true },
+      { id: "stakeholder-vs-sponsor", name: "Stakeholders vs the Sponsor", complete: true },
+      { id: "scope-creep", name: "Scope Creep", complete: false },
     ],
     messages: [
       { role: "hire", content: "So the final report is a milestone, right? Since it's a big important thing we have to finish?" },
@@ -63,6 +64,7 @@ const conversations: DemoConversation[] = [
       { role: "hire", content: "So an operations team can still be a stakeholder when they push back, while the sponsor is where major trade-offs go. If a client asks for one extra field on a form, do we still need to check its impact before adding it?" },
     ],
     tryThis: "Yes. Treat it as a change request: check the effect on effort, timeline, cost, and risk before deciding whether to approve it. It becomes scope creep when we add it informally without managing that impact.",
+    completion: { conceptId: "scope-creep", notebookEntry: "A change is not automatically a problem. We check its impact and agree it properly, instead of quietly adding it to the plan." },
     report: {
       strengths: [
         "You made the difference between a deliverable and a milestone concrete by separating the report from its approval point.",
@@ -80,9 +82,9 @@ const conversations: DemoConversation[] = [
     hire: { name: "Milo" },
     concepts: mathsConcepts,
     agenda: [
-      { name: "The Number Line", complete: true },
-      { name: "Equivalent Fractions", complete: true },
-      { name: "Negative Numbers", complete: false },
+      { id: "number-line", name: "The Number Line", complete: true },
+      { id: "equivalent-fractions", name: "Equivalent Fractions", complete: true },
+      { id: "negative-numbers", name: "Negative Numbers", complete: false },
     ],
     messages: [
       { role: "hire", content: "For the Number Quest Club, if -3 is three steps left of zero, is zero just the lobby where nobody has picked a direction yet?" },
@@ -92,6 +94,7 @@ const conversations: DemoConversation[] = [
       { role: "hire", content: "Right - the number of slices changes, but not the amount of pizza. I am still wobbly below zero: if it is -3 degrees outside and then -7, which one is colder?" },
     ],
     tryThis: "-7 degrees is colder because it is farther left on the number line than -3. The farther left we move below zero, the smaller the number and the colder the temperature.",
+    completion: { conceptId: "negative-numbers", notebookEntry: "On the number line, -7 is farther left than -3, so it is smaller — and that means colder when we are talking about temperature." },
     report: {
       strengths: [
         "You used the number line as a clear visual reference, which helped Milo describe negative numbers without treating them as something bad.",
@@ -108,18 +111,24 @@ export default function DemoOffice({ conversationId }: { conversationId: string 
   const [reportOpen, setReportOpen] = useState(false);
   const conversation = conversations.find((item) => item.id === conversationId) ?? conversations[0];
   const [messages, setMessages] = useState<DemoMessage[]>(conversation.messages);
+  const [concepts, setConcepts] = useState<SkillConcept[]>(conversation.concepts);
+  const [agenda, setAgenda] = useState(conversation.agenda);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState<string>();
   const [showGuidedReply, setShowGuidedReply] = useState(true);
+  const [progressMoment, setProgressMoment] = useState<"landed">();
   const initials = conversation.hire.name.slice(0, 2).toUpperCase();
 
   useEffect(() => {
     setMessages(conversation.messages);
+    setConcepts(conversation.concepts);
+    setAgenda(conversation.agenda);
     setDraft("");
     setThinking(false);
     setError(undefined);
     setShowGuidedReply(true);
+    setProgressMoment(undefined);
     setNotebookOpen(false);
     setReportOpen(false);
   }, [conversation]);
@@ -135,9 +144,15 @@ export default function DemoOffice({ conversationId }: { conversationId: string 
     setThinking(true);
     try {
       const response = await fetch("/api/demo/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversationId: conversation.id, message, history: messages }) });
-      const data = await response.json() as { hireReply?: string; error?: string };
+      const data = await response.json() as { hireReply?: string; error?: string; conceptAcquired?: boolean; conceptId?: string; notebookEntry?: string };
       if (!response.ok || !data.hireReply) throw new Error(data.error ?? "The demo office could not reply just now. Please try again.");
       setMessages((current) => [...current, { role: "hire", content: data.hireReply as string }]);
+      if (data.conceptAcquired && data.conceptId === conversation.completion.conceptId) {
+        setConcepts((current) => current.map((concept) => concept.id === data.conceptId ? { ...concept, status: "mastered", notebookEntry: data.notebookEntry ?? conversation.completion.notebookEntry } : concept));
+        setAgenda((current) => current.map((item) => item.id === data.conceptId ? { ...item, complete: true } : item));
+        setProgressMoment("landed");
+        window.setTimeout(() => setProgressMoment(undefined), 1500);
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The demo office could not reply just now. Please try again.");
     } finally {
@@ -184,14 +199,14 @@ export default function DemoOffice({ conversationId }: { conversationId: string 
           <section className="surface-card p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">Today's office plan</p>
             <ul className="mt-4 space-y-3 text-sm text-slate-700">
-              {conversation.agenda.map((item) => <li key={item.name} className="flex items-center gap-3"><span className={`grid h-5 w-5 place-items-center rounded-full text-xs font-bold ${item.complete ? "bg-emerald-100 text-emerald-700" : "border border-amber-300 bg-amber-50 text-amber-700"}`}>{item.complete ? "✓" : ""}</span>{item.name}</li>)}
+              {agenda.map((item) => <li key={item.id} className="flex items-center gap-3"><span className={`grid h-5 w-5 place-items-center rounded-full text-xs font-bold ${item.complete ? "bg-emerald-100 text-emerald-700" : "border border-amber-300 bg-amber-50 text-amber-700"}`}>{item.complete ? "✓" : ""}</span>{item.name}</li>)}
             </ul>
           </section>
-          <HireCard hire={conversation.hire} concepts={conversation.concepts} onOpenFieldNotes={() => setNotebookOpen(true)} />
+          <HireCard hire={conversation.hire} concepts={concepts} progressMoment={progressMoment} onOpenFieldNotes={() => setNotebookOpen(true)} />
         </aside>
       </div>
     </div>
-    {notebookOpen ? <NotebookPanel name={conversation.hire.name} concepts={conversation.concepts} onClose={() => setNotebookOpen(false)} /> : null}
+    {notebookOpen ? <NotebookPanel name={conversation.hire.name} concepts={concepts} onClose={() => setNotebookOpen(false)} /> : null}
     {reportOpen ? <FocusDialog ariaLabel="Demo teaching report" onClose={() => setReportOpen(false)} className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/30 p-5 backdrop-blur-sm"><div className="mx-auto my-8 max-w-4xl rounded-2xl bg-white p-6 shadow-2xl sm:p-9"><div className="mb-8 flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">Demo teaching report</p><h2 className="font-display mt-2 text-3xl font-semibold text-[#111827]">Here&apos;s how your teaching went</h2><p className="mt-2 text-sm text-slate-500">A fixed report that belongs to this finished demo conversation.</p></div><button onClick={() => setReportOpen(false)} className="touch-target rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">Close</button></div><GapReport report={conversation.report} /></div></FocusDialog> : null}
   </main>;
 }

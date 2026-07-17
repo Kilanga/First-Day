@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { demoProgressForMessage } from "@/lib/demoProgress";
 import { callText, type ConversationMessage } from "@/lib/openai";
 import { consumeDemoChatQuota } from "@/lib/ratelimit";
 import { logOperationalEvent, operationalErrorKind } from "@/lib/telemetry";
@@ -43,9 +44,11 @@ export async function POST(request: Request) {
     if (!(await consumeDemoChatQuota(request))) return NextResponse.json({ error: "The demo office is taking a short break. Please try again later." }, { status: 429 });
     const demo = DEMOS[body.conversationId];
     const history = safeHistory(body.history);
-    const hireReply = await callText(demo.system, [...history, { role: "user", content: body.message.trim() }]);
+    const message = body.message.trim();
+    const progress = demoProgressForMessage(body.conversationId, message);
+    const hireReply = await callText(demo.system, [...history, { role: "user", content: message }]);
     logOperationalEvent("demo.chat.completed", { durationMs: Date.now() - startedAt, conversation: body.conversationId });
-    return NextResponse.json({ hireReply, name: demo.name });
+    return NextResponse.json({ hireReply, name: demo.name, conceptAcquired: Boolean(progress), conceptId: progress?.conceptId });
   } catch (error) {
     console.error("Demo chat request failed", operationalErrorKind(error));
     logOperationalEvent("demo.chat.failed", { durationMs: Date.now() - startedAt });
