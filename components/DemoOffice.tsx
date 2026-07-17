@@ -19,6 +19,7 @@ type DemoConversation = {
   concepts: SkillConcept[];
   agenda: Array<{ name: string; complete: boolean }>;
   messages: DemoMessage[];
+  tryThis: string;
   report: Report;
 };
 
@@ -61,6 +62,7 @@ const conversations: DemoConversation[] = [
       { role: "mentor", content: "The sponsor is accountable for the business case and major decisions. Stakeholders are the wider group affected by, or able to influence, the project." },
       { role: "hire", content: "So an operations team can still be a stakeholder when they push back, while the sponsor is where major trade-offs go. If a client asks for one extra field on a form, do we still need to check its impact before adding it?" },
     ],
+    tryThis: "Yes. Treat it as a change request: check the effect on effort, timeline, cost, and risk before deciding whether to approve it. It becomes scope creep when we add it informally without managing that impact.",
     report: {
       strengths: [
         "You made the difference between a deliverable and a milestone concrete by separating the report from its approval point.",
@@ -89,6 +91,7 @@ const conversations: DemoConversation[] = [
       { role: "mentor", content: "It is the same amount when we split the same whole into smaller equal pieces. Two quarters cover the same half of one pizza, so the fractions are equivalent even though the numbers look different." },
       { role: "hire", content: "Right - the number of slices changes, but not the amount of pizza. I am still wobbly below zero: if it is -3 degrees outside and then -7, which one is colder?" },
     ],
+    tryThis: "-7 degrees is colder because it is farther left on the number line than -3. The farther left we move below zero, the smaller the number and the colder the temperature.",
     report: {
       strengths: [
         "You used the number line as a clear visual reference, which helped Milo describe negative numbers without treating them as something bad.",
@@ -171,7 +174,7 @@ export default function DemoOffice({ conversationId }: { conversationId: string 
             </div>)}
           </div>
           {thinking ? <div className="mx-4 mb-1 flex items-center gap-3"><div aria-hidden="true" className="grid h-8 w-8 place-items-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{initials}</div><div className="rounded-2xl rounded-bl-md border border-[#E5E7EB] bg-[#F9FAFB] px-4 py-3 text-sm text-[#6B7280]">{conversation.hire.name} is thinking...</div></div> : null}
-          <form onSubmit={(event) => void sendDemoMessage(event)} className="border-t border-[#F3F4F6] p-4"><div className="flex gap-3"><label className="sr-only" htmlFor="demo-explanation">Explain your answer</label><textarea id="demo-explanation" value={draft} onChange={(event) => setDraft(event.target.value)} disabled={thinking} rows={2} maxLength={6000} placeholder={`Explain it to ${conversation.hire.name}...`} className="min-h-[52px] flex-1 resize-none rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none transition focus:border-[#4F46E5] focus:ring-2 focus:ring-[#EEF2FF] disabled:bg-[#F9FAFB]" /><button type="submit" disabled={!draft.trim() || thinking} className="touch-target rounded-full bg-[#4F46E5] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4338CA] disabled:cursor-not-allowed disabled:opacity-40">Send</button></div><p className="mt-2 text-xs text-slate-500">Demo messages are not saved to your onboarding desk.</p>{error ? <p role="alert" className="mt-3 text-xs text-rose-600">{error}</p> : null}</form>
+          <form onSubmit={(event) => void sendDemoMessage(event)} className="border-t border-[#F3F4F6] p-4"><div className="flex gap-3"><label className="sr-only" htmlFor="demo-explanation">Explain your answer</label><textarea id="demo-explanation" value={draft} onChange={(event) => setDraft(event.target.value)} disabled={thinking} rows={2} maxLength={6000} placeholder={`Explain it to ${conversation.hire.name}...`} className="min-h-[52px] flex-1 resize-none rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none transition focus:border-[#4F46E5] focus:ring-2 focus:ring-[#EEF2FF] disabled:bg-[#F9FAFB]" /><button type="submit" disabled={!draft.trim() || thinking} className="touch-target rounded-full bg-[#4F46E5] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4338CA] disabled:cursor-not-allowed disabled:opacity-40">Send</button></div><div className="mt-3 rounded-xl border border-indigo-100 bg-[#EEF2FF] px-3 py-3 text-xs leading-5 text-indigo-950"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">Not sure where to begin?</p><button type="button" onClick={() => setDraft(conversation.tryThis)} disabled={thinking} className="touch-target rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#4F46E5] shadow-sm transition hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50">Try this reply</button></div><p className="mt-1.5 text-indigo-900">{conversation.tryThis}</p></div><p className="mt-2 text-xs text-slate-500">Demo messages are not saved to your onboarding desk.</p>{error ? <p role="alert" className="mt-3 text-xs text-rose-600">{error}</p> : null}</form>
         </section>
 
         <aside className="space-y-6">
