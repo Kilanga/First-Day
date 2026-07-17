@@ -57,10 +57,9 @@ const conversations: DemoConversation[] = [
     messages: [
       { role: "hire", content: "So the final report is a milestone, right? Since it's a big important thing we have to finish?" },
       { role: "mentor", content: "The final report is a deliverable because it is an output we produce. A milestone is a zero-duration checkpoint, such as the moment the report is approved." },
-      { role: "hire", content: "That makes sense now: the report needs work, but approval is the marker in time. I wrote that down so I do not put a week of work on the milestone itself." },
-      { role: "mentor", content: "Exactly. The sponsor is the person accountable for the business case and major decisions. Stakeholders are the wider group affected by, or able to influence, the project." },
-      { role: "hire", content: "So an operations team can still be a stakeholder even when they are pushing back. The sponsor is not just another person to keep happy - they are where major trade-offs go." },
-      { role: "hire", content: "Can I check one more thing? If a client asks for one extra field on a form, we should still look at the impact before slipping it into the plan, right?" },
+      { role: "hire", content: "That makes sense now: the report needs work, but approval is the marker in time. Before I invite people to the review, is the sponsor just another stakeholder, or do they have a different job?" },
+      { role: "mentor", content: "The sponsor is accountable for the business case and major decisions. Stakeholders are the wider group affected by, or able to influence, the project." },
+      { role: "hire", content: "So an operations team can still be a stakeholder when they push back, while the sponsor is where major trade-offs go. If a client asks for one extra field on a form, do we still need to check its impact before adding it?" },
     ],
     report: {
       strengths: [
@@ -86,10 +85,9 @@ const conversations: DemoConversation[] = [
     messages: [
       { role: "hire", content: "For the Number Quest Club, if -3 is three steps left of zero, is zero just the lobby where nobody has picked a direction yet?" },
       { role: "mentor", content: "That is a useful picture. Zero is the reference point: numbers to the right are greater and numbers to the left are smaller. Negative does not mean bad; it only tells us which side of zero we are on." },
-      { role: "hire", content: "Okay, so -3 is not a sad 3. It is just three steps on the other side of the lobby. I think the kids will like that." },
-      { role: "hire", content: "And can one half really be the same as two quarters? It sounds like the pizza is trying to do a magic trick." },
+      { role: "hire", content: "Okay, so -3 is not a sad 3. It is just three steps on the other side of the lobby. Can one half really be the same as two quarters, though? It sounds like the pizza is trying to do a magic trick." },
       { role: "mentor", content: "It is the same amount when we split the same whole into smaller equal pieces. Two quarters cover the same half of one pizza, so the fractions are equivalent even though the numbers look different." },
-      { role: "hire", content: "Right - the number of slices changes, but not the amount of pizza. I am still a little wobbly when the number line crosses below zero, though." },
+      { role: "hire", content: "Right - the number of slices changes, but not the amount of pizza. I am still wobbly below zero: if it is -3 degrees outside and then -7, which one is colder?" },
     ],
     report: {
       strengths: [
